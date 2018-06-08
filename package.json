@@ -1,0 +1,22 @@
+{
+  "name": "scribe",
+  "version": "1.0.0",
+  "description": "Database modeling services.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/flypapertech/scribe.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/flypapertech/scribe/issues"
+  },
+  "homepage": "https://github.com/flypapertech/scribe#readme",
+  "dependencies": {
+    "waterline": "^0.13.4"
+  }
+}
