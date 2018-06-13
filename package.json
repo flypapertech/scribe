@@ -16,7 +16,5 @@
     "url": "https://github.com/flypapertech/scribe/issues"
   },
   "homepage": "https://github.com/flypapertech/scribe#readme",
-  "dependencies": {
-    "waterline": "^0.13.4"
-  }
+  "dependencies": {}
 }
