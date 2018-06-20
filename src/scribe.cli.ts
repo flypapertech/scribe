@@ -2,10 +2,9 @@ import * as cluster from "cluster"
 import * as express from "express"
 import * as parser from "body-parser"
 import * as os from "os"
+import * as mkdirp from "mkdirp"
+import { argv } from "yargs"
 
-const mkdirp = require("mkdirp")
-
-const argv = require("yargs").argv
 argv.name = argv.name || process.env.SCRIBE_APP_NAME || process.env.HOSTNAME || "localhost"
 argv.home = argv.home || process.env.SCRIBE_APP_HOME || process.cwd()
 argv.port = argv.port || process.env.SCRIBE_APP_PORT || process.env.PORT || 1337
