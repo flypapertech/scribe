@@ -4,8 +4,8 @@
   "description": "Database modeling services.",
   "main": "index.js",
   "scripts": {
-    "test": "node_modules/ts-node/bin/ts-node node_modules/jasmine/bin/jasmine",
-    "start": "node_modules/ts-node/bin/ts-node src/scribe.cli.ts"
+    "test": "node_modules/.bin/ts-node node_modules/.bin/jasmine",
+    "start": "node_modules/.bin/ts-node src/scribe.cli.ts"
   },
   "repository": {
     "type": "git",
@@ -32,8 +32,8 @@
     "@types/node": "^10.3.4",
     "@types/request": "^2.47.1",
     "@types/yargs": "^11.0.0",
+    "axios": "^0.18.0",
     "jasmine": "^3.1.0",
-    "request": "^2.87.0",
     "ts-node": "^6.1.1",
     "typescript": "^2.9.2"
   }

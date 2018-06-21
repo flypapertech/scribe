@@ -3,7 +3,9 @@ import * as express from "express"
 import * as parser from "body-parser"
 import * as os from "os"
 import * as mkdirp from "mkdirp"
-import { argv } from "yargs"
+import * as yargs from "yargs"
+
+const argv = yargs.argv
 
 argv.name = argv.name || process.env.SCRIBE_APP_NAME || process.env.HOSTNAME || "localhost"
 argv.home = argv.home || process.env.SCRIBE_APP_HOME || process.cwd()
@@ -22,9 +24,11 @@ if (cluster.isMaster) {
     })
 
 } else {
+    createServer()
+}
 
+export function createServer() {
     const scribe = express()
-
     scribe.locals.argv = argv
     if (argv.mode === "production") {
 
@@ -49,18 +53,21 @@ if (cluster.isMaster) {
         }))
     }
 
+    scribe.get("/", parser.urlencoded({ extended: true }), (req, res, next) => {
+        res.statusCode = 200
+        res.send()
+    })
+
     scribe.get("/:component", parser.urlencoded({ extended: true }), (req, res, next) => {
     })
 
-    const server = scribe.listen(argv.port, () => {
-        console.log("Scribe - Core: %s, Process: %sd, Name: %s, Home: %s, Port: %d",
-            cluster.worker.id,
+    return scribe.listen(argv.port, () => {
+        console.log("Scribe - Process: %sd, Name: %s, Home: %s, Port: %d, Mode: %s",
             process.pid,
             argv.name,
             argv.home,
-            argv.port
+            argv.port,
+            argv.mode
         )
     })
-
-    module.exports = server
 }
