@@ -53,12 +53,42 @@ export function createServer() {
         }))
     }
 
-    scribe.get("/", parser.urlencoded({ extended: true }), (req, res, next) => {
-        res.statusCode = 200
-        res.send()
+    scribe.post("/v0/:component", parser.urlencoded({ extended: true }), (req, res, next) => {
+        // make table and record for info sent
+        // send response success or fail
     })
 
-    scribe.get("/:component", parser.urlencoded({ extended: true }), (req, res, next) => {
+    scribe.delete("/v0/:component", parser.urlencoded({ extended: true }), (req, res, next) => {
+        // delete table if it exists
+        // send response success or fail
+    })
+
+    scribe.get("/v0/:component/all", parser.urlencoded({ extended: true }), (req, res, next) => {
+        // get all
+        // fail if component doesn't exist
+        // returns array always
+    })
+
+    scribe.get("/v0/:component/:id", parser.urlencoded({ extended: true }), (req, res, next) => {
+        // get id
+        // fail if component doesn't exist
+        // returns array always
+    })
+
+    scribe.get("/v0/:component/:id/history", parser.urlencoded({ extended: true }), (req, res, next) => {
+        // get history of id
+        // fail if component doesn't exist
+        // returns array always
+    })
+    
+    scribe.put("/v0/:component/:id", parser.urlencoded({ extended: true }), (req, res, next) => {
+        // update id if it exists
+        // fail if it doesn't
+    })
+
+    scribe.delete("/v0/:component/:id", parser.urlencoded({ extended: true }), (req, res, next) => {
+        // delete id if it exists
+        // fail if it doesn't exist
     })
 
     return scribe.listen(argv.port, () => {
