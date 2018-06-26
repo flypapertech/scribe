@@ -59,52 +59,57 @@ export function createServer() {
             const pgp:pgPromise.IMain = pgPromise({})
             this.db = pgp(dbConfig)
         }
-    
-        public async createSingle(component: string, data: JSON, schema: any){
-            // make table and record for info sent
-            var sqlColumnSchemas: string[] = []
-            var sqlColumnNames: string[] = []
-            var sqlColumnIndexes: string[] = []
-            var dataArray: string[] = []
+
+        private formatQueryData(data: JSON, schema: any){
+            var queryData = {
+                sqlColumnSchemas: [],
+                sqlColumnNames: [],
+                sqlColumnIndexes: [],
+                dataArray: []
+            }
+
             Object.keys(schema.properties).forEach(function(key, index){
-                sqlColumnNames.push(key)
-                sqlColumnIndexes.push(`$${index+1}`)
+                queryData.sqlColumnNames.push(key)
+                queryData.sqlColumnIndexes.push(`$${index+1}`)
                 // TODO sanitize data input
-                dataArray.push(JSON.stringify(data[key]))
+                queryData.dataArray.push(JSON.stringify(data[key]))
                 var property = schema.properties[key]
 
                 switch (property.type) {
                     case "integer":
-                        sqlColumnSchemas.push(`${key} integer`)
+                        queryData.sqlColumnSchemas.push(`${key} integer`)
                         break;
 
                     case "string":
                         if (property.format == "date-time"){
-                            sqlColumnSchemas.push(`${key} timestamp`)
+                            queryData.sqlColumnSchemas.push(`${key} timestamp`)
                         }
                         else {
-                            sqlColumnSchemas.push(`${key} text`)
+                            queryData.sqlColumnSchemas.push(`${key} text`)
                         }
 
                         break;
 
                     case "object":
-                        sqlColumnSchemas.push(`${key} json`)
+                        queryData.sqlColumnSchemas.push(`${key} json`)
                     
                     default:
                         break;
                 }
             })
 
-            var createQuery = `CREATE TABLE IF NOT EXISTS ${component}(id serial PRIMARY KEY, ${sqlColumnSchemas.join(",")})`
-            console.log(createQuery)
-            this.db.query(createQuery)
-
-            var insertQuery = `INSERT INTO ${component}(${sqlColumnNames.join(",")}) values(${sqlColumnIndexes.join(",")}) RETURNING *`
-            console.log(insertQuery)
-            console.log(JSON.stringify(dataArray))
+            return queryData;
+        }
+    
+        public async createSingle(component: string, data: JSON, schema: any){
+            // make table and record for info sent
+            let queryData = this.formatQueryData(data, schema)
+            
+            var createQuery = `CREATE TABLE IF NOT EXISTS ${component}(id serial PRIMARY KEY, ${queryData.sqlColumnSchemas.join(",")})`
+            var insertQuery = `INSERT INTO ${component}(${queryData.sqlColumnNames.join(",")}) values(${queryData.sqlColumnIndexes.join(",")}) RETURNING *`
             try {
-                let result = await this.db.query(insertQuery, dataArray)
+                await this.db.query(createQuery)
+                let result = await this.db.query(insertQuery, queryData.dataArray)
                 return result;
             } catch (err){
                 return err;
@@ -135,16 +140,36 @@ export function createServer() {
     
         }
     
-        public updateSingle(component: string, id: string, data: JSON, schema: object){
-            
+        public async updateSingle(component: string, id: string, data: JSON, schema: object){
+            let queryData = this.formatQueryData(data, schema)
+
+            var updateQuery = `UPDATE ${component} SET (${queryData.sqlColumnNames.join(",")}) = (${queryData.sqlColumnIndexes.join(",")}) WHERE id = ${id} RETURNING *`
+            try {
+                let result = await this.db.query(updateQuery, queryData.dataArray)
+                return result;
+            } catch (err){
+                return err;
+            }
         }
     
-        public deleteSingle(component: string, id: string){
-    
+        public async deleteSingle(component: string, id: string){
+            var deleteQuery = `DELETE FROM ${component} WHERE id=$1`
+            try {
+                let response = await this.db.query(deleteQuery, id)
+                return response;
+            } catch (err){
+                return err;
+            }
         }
     
-        public deleteAll(component: string){
-    
+        public async deleteAll(component: string){
+            var deleteAllQuery = `DROP TABLE IF EXISTS ${component}`
+            try {
+                let response = await this.db.query(deleteAllQuery)
+                return response;
+            } catch (err){
+                return err;
+            }
         }
     }
 
@@ -174,21 +199,19 @@ export function createServer() {
     }
 
     const ajv = new Ajv();
-    const createSchema = require("./default.table.create.schema.json")
-    const validateCreate = ajv.compile(createSchema)
+    const schema = require("./default.table.schema.json")
+    const validate = ajv.compile(schema)
     let db = new DB()
 
     scribe.post("/v0/:component", parser.json(), (req, res, next) => {
         // sanity check json body
-        console.log(req.body)
-        if (validateCreate(req.body) == false){
-            console.log(validateCreate.errors)
+        if (validate(req.body) == false){
             res.statusCode = 400
-            res.send("Invalid json request format")
+            res.send(validate.errors)
             return;
         }
 
-        db.createSingle(req.params.component, req.body, createSchema).then(result => {
+        db.createSingle(req.params.component, req.body, schema).then(result => {
             res.send(result)
         })
 
@@ -197,7 +220,9 @@ export function createServer() {
 
     scribe.delete("/v0/:component", parser.urlencoded({ extended: true }), (req, res, next) => {
         // delete table if it exists
-        db.deleteAll(req.params.component)
+        db.deleteAll(req.params.component).then(result => {
+            res.send(result)
+        })
         // send response success or fail
     })
 
@@ -226,23 +251,26 @@ export function createServer() {
         // returns array always
     })
     
-    scribe.put("/v0/:component/:id", parser.urlencoded({ extended: true }), (req, res, next) => {
+    scribe.put("/v0/:component/:id", parser.json(), (req, res, next) => {
         // sanity check json body
-       /* if (validate(req.body) == false){
+        if (validate(req.body) == false){
             res.statusCode = 400
-            res.send("Invalid json request format")
+            res.send(validate.errors)
             return;
         }
 
         // update id if it exists
-        db.updateSingle(req.params.component, req.params.id, req.body, schema)
-        // fail if it doesn't
-        */
+        db.updateSingle(req.params.component, req.params.id, req.body, schema).then(result => {
+            res.send(result)
+        })
     })
 
     scribe.delete("/v0/:component/:id", parser.urlencoded({ extended: true }), (req, res, next) => {
         // delete id if it exists
         // fail if it doesn't exist
+        db.deleteSingle(req.params.component, req.params.id).then(result => {
+            res.send(result)
+        })
     })
 
     return scribe.listen(argv.port, () => {

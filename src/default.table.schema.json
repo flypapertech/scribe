@@ -1,0 +1,32 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "description": "The default table schema to use for all tables",
+    "type": "object",
+    "required": [
+        "data",
+        "dateCreated",
+        "dateModified",
+        "createdBy",
+        "modifiedBy"
+    ],
+    "additionalProperties": false,
+    "properties": {
+        "data": {
+            "type": "object"
+        },
+        "dateCreated": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "dateModified": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "createdBy": {
+            "type": "integer"
+        },
+        "modifiedBy": {
+            "type": "integer"
+        }
+    }
+}
