@@ -17,7 +17,7 @@ argv.mode = argv.mode || process.env.SCRIBE_APP_MODE || process.env.NODE_MODE ||
 argv.dbHost = argv.dbHost || process.env.SCRIBE_APP_DB_HOST || "localhost"
 argv.dbPass = argv.dbPass || process.env.SCRIBE_APP_DB_PASS || ""
 argv.dbUser = argv.dbUser || process.env.SCRIBE_APP_DB_USER || ""
-argv.dbPort = argv.dbPort || process.env.SCRIBE_APP_DB_USER || 5432
+argv.dbPort = argv.dbPort || process.env.SCRIBE_APP_DB_PORT || 5432
 argv.dbName = argv.dbName || process.env.SCRIBE_APP_DB_NAME || "scribe"
 
 const dbConfig = {
