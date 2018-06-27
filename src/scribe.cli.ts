@@ -169,6 +169,26 @@ export function createServer() {
                 return err
             }
         }
+
+        public async getAllHistory(component: string) {
+            try {
+                let allRows = await this.getAll(component)
+                let allHistory = []
+                for (let entry of allRows) {
+                    // TODO speed this up by hitting the db only once
+                    let history = await this.getSingleHistory(component, entry.id)
+                    allHistory.push({
+                        "id": entry.id,
+                        "history": history
+                    })
+                }
+
+                return allHistory
+
+            } catch (err) {
+                return err
+            }
+        }
     
         public async updateSingle(component: string, id: string, data: JSON, schema: object){
             let queryData = this.formatQueryData(data, schema)
@@ -277,6 +297,15 @@ export function createServer() {
     scribe.get("/v0/:component/all", parser.urlencoded({ extended: true }), (req, res, next) => {
         // get all
         db.getAll(req.params.component).then(result => {
+            res.send(result)
+        })
+        // fail if component doesn't exist
+        // returns array always
+    })
+
+    scribe.get("/v0/:component/all/history", parser.urlencoded({ extended: true }), (req, res, next) => {
+        // get all
+        db.getAllHistory(req.params.component).then(result => {
             res.send(result)
         })
         // fail if component doesn't exist
