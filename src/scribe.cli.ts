@@ -119,7 +119,7 @@ export function createServer() {
                 // stringify with line breaks so diff works
                 let resultString = JSON.stringify(result[0], null)
                 const dmp = new DiffMatchPatch.diff_match_patch()
-                let diff = dmp.patch_make("", resultString)
+                let diff = dmp.patch_make(resultString, "")
                 var diffValues = [result[0].id, JSON.stringify([dmp.patch_toText(diff)])]
                 let historyResult = await this.db.query(insertHistoryQuery, diffValues)
                 return historyResult;
@@ -150,12 +150,23 @@ export function createServer() {
         }
     
         public async getSingleHistory(component: string, id:string){ 
-            var getQuery = `SELECT * FROM ${component}_history WHERE foreignKey=$1`
             try {
-                let response = await this.db.query(getQuery, id)
-                return response;
-            } catch (err){
-                return err;
+                let rawHistory = await this.getSingleHistoryRaw(component, id)
+                rawHistory = rawHistory[0]
+                let currentVersion = await this.getSingle(component, id)
+                currentVersion = JSON.stringify(currentVersion[0])
+                const dmp = new DiffMatchPatch.diff_match_patch()
+                var oldVersions = []
+                oldVersions.push(JSON.parse(currentVersion))
+                // ignore original empty object hence >= 1
+                for (var i = rawHistory.patches.length-1; i >= 1; i--) {
+                    currentVersion = dmp.patch_apply(dmp.patch_fromText(rawHistory.patches[i]),currentVersion)[0]
+                    oldVersions.push(JSON.parse(currentVersion))
+                }
+
+                return oldVersions
+            } catch (err) {
+                return err
             }
         }
     
@@ -166,10 +177,10 @@ export function createServer() {
             var updateHistoryQuery = `UPDATE ${component}_history SET patches = $1 WHERE foreignKey = ${id} RETURNING *`
             try {
                 let oldVersion = await this.getSingle(component, id)
-                let oldHistory = await this.getSingleHistory(component, id)
+                let oldHistory = await this.getSingleHistoryRaw(component, id)
                 let result = await this.db.query(updateQuery, queryData.dataArray)
                 const dmp = new DiffMatchPatch.diff_match_patch()
-                let diff = dmp.patch_make(JSON.stringify(oldVersion[0]), JSON.stringify(result[0]))
+                let diff = dmp.patch_make(JSON.stringify(result[0]), JSON.stringify(oldVersion[0]))
                 oldHistory[0].patches.push(dmp.patch_toText(diff))
                 let historyResult = await this.db.query(updateHistoryQuery, JSON.stringify(oldHistory[0].patches))
                 return result;
@@ -192,6 +203,16 @@ export function createServer() {
             var deleteAllQuery = `DROP TABLE IF EXISTS ${component}, ${component}_history`
             try {
                 let response = await this.db.query(deleteAllQuery)
+                return response;
+            } catch (err){
+                return err;
+            }
+        }
+
+        private async getSingleHistoryRaw(component: string, id: string){
+            var getQuery = `SELECT * FROM ${component}_history WHERE foreignKey=$1`
+            try {
+                let response = await this.db.query(getQuery, id)
                 return response;
             } catch (err){
                 return err;
