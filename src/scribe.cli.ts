@@ -20,19 +20,21 @@ argv.dbUser = argv.dbUser || process.env.SCRIBE_APP_DB_USER || ""
 argv.dbPort = argv.dbPort || process.env.SCRIBE_APP_DB_PORT || 5432
 argv.dbName = argv.dbName || process.env.SCRIBE_APP_DB_NAME || "scribe"
 
-const dbConfig = {
+const dbCreateConfig = {
     user: argv.dbUser,
     password: argv.dbPass,
     port: argv.dbPort,
-    host: argv.dbHost,
-    database: argv.dbName
+    host: argv.dbHost
 }
 
+const dbConnectConfig = dbCreateConfig
+dbConnectConfig["database"] = argv.dbName
+
 if (cluster.isMaster) {
-    pgtools.createdb(dbConfig, argv.dbName).then(res => {
+    pgtools.createdb(dbCreateConfig, argv.dbName).then(res => {
         console.log(res)
     }).catch(err => {
-        if (err.pgErr.code != "42P04") {
+        if (err.pgErr === undefined || err.pgErr.code != "42P04") {
             console.error(err)
         }
     })
@@ -57,7 +59,7 @@ export function createServer() {
     
         constructor(){
             const pgp:pgPromise.IMain = pgPromise({})
-            this.db = pgp(dbConfig)
+            this.db = pgp(dbConnectConfig)
         }
 
         private formatQueryData(data: JSON, schema: any){
