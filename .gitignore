@@ -16,3 +16,5 @@ bower_components
 npm-debug*
 *.map
 *bundle.*
+logs
+cache

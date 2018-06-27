@@ -81,7 +81,7 @@ export function createServer() {
                         break;
 
                     case "string":
-                        if (property.format == "date-time"){
+                        if (property.format === "date-time"){
                             queryData.sqlColumnSchemas.push(`${key} timestamp`)
                         }
                         else {
@@ -204,8 +204,9 @@ export function createServer() {
     let db = new DB()
 
     scribe.post("/v0/:component", parser.json(), (req, res, next) => {
+
         // sanity check json body
-        if (validate(req.body) == false){
+        if (validate(req.body) === false){
             res.statusCode = 400
             res.send(validate.errors)
             return;
@@ -253,7 +254,7 @@ export function createServer() {
     
     scribe.put("/v0/:component/:id", parser.json(), (req, res, next) => {
         // sanity check json body
-        if (validate(req.body) == false){
+        if (validate(req.body) === false){
             res.statusCode = 400
             res.send(validate.errors)
             return;
