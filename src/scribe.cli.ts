@@ -116,13 +116,12 @@ export function createServer() {
                 await this.db.query(createQuery)
                 await this.db.query(createHistoryQuery)
                 let result = await this.db.query(insertQuery, queryData.dataArray)
-                // stringify with line breaks so diff works
-                let resultString = JSON.stringify(result[0], null)
+                let resultString = JSON.stringify(result[0])
                 const dmp = new DiffMatchPatch.diff_match_patch()
                 let diff = dmp.patch_make(resultString, "")
                 var diffValues = [result[0].id, JSON.stringify([dmp.patch_toText(diff)])]
                 let historyResult = await this.db.query(insertHistoryQuery, diffValues)
-                return historyResult;
+                return result;
             } catch (err){
                 console.log(err)
                 return err;
@@ -211,7 +210,6 @@ export function createServer() {
     
         public async deleteSingle(component: string, id: string){
             var deleteQuery = `DELETE FROM ${component} WHERE id=$1`
-            var deleteHistoryQuery = `DELETE FROM ${component}_history WHERE foreignKey=$1`
             try {
                 let response = await this.db.query(deleteQuery, id)
                 return response;
