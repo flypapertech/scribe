@@ -7,6 +7,7 @@ import * as yargs from "yargs"
 import * as pgPromise from "pg-promise"
 import * as pgtools from "pgtools"
 import * as Ajv from "ajv"
+import * as DiffMatchPatch from "diff-match-patch"
 
 const argv = yargs.argv
 
@@ -95,7 +96,7 @@ export function createServer() {
                     
                     default:
                         break;
-                }
+                } 
             })
 
             return queryData;
@@ -106,12 +107,22 @@ export function createServer() {
             let queryData = this.formatQueryData(data, schema)
             
             var createQuery = `CREATE TABLE IF NOT EXISTS ${component}(id serial PRIMARY KEY, ${queryData.sqlColumnSchemas.join(",")})`
+            var createHistoryQuery = `CREATE TABLE IF NOT EXISTS ${component}_history(id serial PRIMARY KEY, foreignKey integer, patches json)`
             var insertQuery = `INSERT INTO ${component}(${queryData.sqlColumnNames.join(",")}) values(${queryData.sqlColumnIndexes.join(",")}) RETURNING *`
+            var insertHistoryQuery = `INSERT INTO ${component}_history(foreignKey, patches) values($1, CAST ($2 AS JSON)) RETURNING *`
             try {
                 await this.db.query(createQuery)
+                await this.db.query(createHistoryQuery)
                 let result = await this.db.query(insertQuery, queryData.dataArray)
-                return result;
+                // stringify with line breaks so diff works
+                let resultString = JSON.stringify(result[0], null)
+                const dmp = new DiffMatchPatch.diff_match_patch()
+                let diff = dmp.patch_make("", resultString)
+                var diffValues = [result[0].id, JSON.stringify([dmp.patch_toText(diff)])]
+                let historyResult = await this.db.query(insertHistoryQuery, diffValues)
+                return historyResult;
             } catch (err){
+                console.log(err)
                 return err;
             }
         }
@@ -136,16 +147,29 @@ export function createServer() {
             }
         }
     
-        public getSingleHistory(component: string, id:string){
-    
+        public async getSingleHistory(component: string, id:string){ 
+            var getQuery = `SELECT * FROM ${component}_history WHERE foreignKey=$1`
+            try {
+                let response = await this.db.query(getQuery, id)
+                return response;
+            } catch (err){
+                return err;
+            }
         }
     
         public async updateSingle(component: string, id: string, data: JSON, schema: object){
             let queryData = this.formatQueryData(data, schema)
 
             var updateQuery = `UPDATE ${component} SET (${queryData.sqlColumnNames.join(",")}) = (${queryData.sqlColumnIndexes.join(",")}) WHERE id = ${id} RETURNING *`
+            var updateHistoryQuery = `UPDATE ${component}_history SET patches = $1 WHERE foreignKey = ${id} RETURNING *`
             try {
+                let oldVersion = await this.getSingle(component, id)
+                let oldHistory = await this.getSingleHistory(component, id)
                 let result = await this.db.query(updateQuery, queryData.dataArray)
+                const dmp = new DiffMatchPatch.diff_match_patch()
+                let diff = dmp.patch_make(JSON.stringify(oldVersion[0]), JSON.stringify(result[0]))
+                oldHistory[0].patches.push(dmp.patch_toText(diff))
+                let historyResult = await this.db.query(updateHistoryQuery, JSON.stringify(oldHistory[0].patches))
                 return result;
             } catch (err){
                 return err;
@@ -163,7 +187,7 @@ export function createServer() {
         }
     
         public async deleteAll(component: string){
-            var deleteAllQuery = `DROP TABLE IF EXISTS ${component}`
+            var deleteAllQuery = `DROP TABLE IF EXISTS ${component}, ${component}_history`
             try {
                 let response = await this.db.query(deleteAllQuery)
                 return response;
@@ -247,7 +271,9 @@ export function createServer() {
 
     scribe.get("/v0/:component/:id/history", parser.urlencoded({ extended: true }), (req, res, next) => {
         // get history of id
-        db.getSingleHistory(req.params.component, req.params.id)
+        db.getSingleHistory(req.params.component, req.params.id).then(result => {
+            res.send(result)
+        })
         // fail if component doesn't exist
         // returns array always
     })
