@@ -109,7 +109,7 @@ export function createServer() {
             let queryData = this.formatQueryData(data, schema)
             
             var createQuery = `CREATE TABLE IF NOT EXISTS ${component}(id serial PRIMARY KEY, ${queryData.sqlColumnSchemas.join(",")})`
-            var createHistoryQuery = `CREATE TABLE IF NOT EXISTS ${component}_history(id serial PRIMARY KEY, foreignKey integer, patches json)`
+            var createHistoryQuery = `CREATE TABLE IF NOT EXISTS ${component}_history(id serial PRIMARY KEY, foreignKey integer REFERENCES ${component} (id) ON DELETE CASCADE, patches json)`
             var insertQuery = `INSERT INTO ${component}(${queryData.sqlColumnNames.join(",")}) values(${queryData.sqlColumnIndexes.join(",")}) RETURNING *`
             var insertHistoryQuery = `INSERT INTO ${component}_history(foreignKey, patches) values($1, CAST ($2 AS JSON)) RETURNING *`
             try {
@@ -211,6 +211,7 @@ export function createServer() {
     
         public async deleteSingle(component: string, id: string){
             var deleteQuery = `DELETE FROM ${component} WHERE id=$1`
+            var deleteHistoryQuery = `DELETE FROM ${component}_history WHERE foreignKey=$1`
             try {
                 let response = await this.db.query(deleteQuery, id)
                 return response;
