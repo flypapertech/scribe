@@ -199,7 +199,7 @@ export function createServer() {
     }
 
     const ajv = new Ajv();
-    const schema = require("./default.table.schema.json")
+    const schema = require(__dirname + "/default.table.schema.json")
     const validate = ajv.compile(schema)
     let db = new DB()
 
