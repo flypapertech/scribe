@@ -93,7 +93,80 @@ mocha.describe("scribe", function() {
             })
     })
 
-    mocha.it("PUT New Column", function(done){
+    mocha.it("PUT entry", function(done){
+        var request = {
+            "data": {
+                "something": "we changed this",
+                "data2": "new thing"
+            },
+            "dateCreated": "2017-06-22T17:57:32Z",
+            "dateModified": "2018-06-22T17:57:32Z",
+            "createdBy": 2,
+            "modifiedBy": 2
+        }
+
+        var expectedResponse = [
+            {
+                "id": 1,
+                "data": {
+                    "something": "we changed this",
+                    "data2": "new thing"
+                },
+                "datecreated": "2017-06-22T21:57:32.000Z",
+                "datemodified": "2018-06-22T21:57:32.000Z",
+                "createdby": 2,
+                "modifiedby": 2
+            }
+        ]
+
+        chai.request(baseEndPoint)
+            .put("/v0/testComponent/1")
+            .send(request)
+            .end((err, res) => {
+                res.body.should.be.eql(expectedResponse)
+                done()
+        })
+    })
+
+    mocha.it("GET all history", function(done){
+        var expectedResponse = [
+            {
+                "id": 1,
+                "history": [
+                    {
+                        "id": 1,
+                        "data": {
+                            "something": "we changed this",
+                            "data2": "new thing"
+                        },
+                        "datecreated": "2017-06-22T21:57:32.000Z",
+                        "datemodified": "2018-06-22T21:57:32.000Z",
+                        "createdby": 2,
+                        "modifiedby": 2
+                    },
+                    {
+                        "id": 1,
+                        "data": {
+                            "something": "somethingstring"
+                        },
+                        "datecreated": "2017-06-22T21:57:32.000Z",
+                        "datemodified": "2018-06-22T21:57:32.000Z",
+                        "createdby": 2,
+                        "modifiedby": 2
+                    }
+                ]
+            }
+        ]
+
+        chai.request(baseEndPoint)
+            .get("/v0/testComponent/all/history")
+            .end((err, res) => {
+                res.body.should.be.eql(expectedResponse)
+                done()
+        })
+    })
+
+    mocha.it("PUT with schema change", function(done){
         server.close()
         let newSchema = schema
         newSchema.required.push("newColumn")
