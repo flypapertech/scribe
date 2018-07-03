@@ -28,8 +28,18 @@ const dbCreateConfig = {
     host: argv.dbHost
 }
 
+pgtools.createdb(dbCreateConfig, argv.dbName).then(res => {
+    console.log(res)
+}).catch(err => {
+    if (err.pgErr === undefined || err.pgErr.code != "42P04") {
+        console.error(err)
+    }
+})
+
 const dbConnectConfig = dbCreateConfig
 dbConnectConfig["database"] = argv.dbName
+const pgp:pgPromise.IMain = pgPromise({})
+const postgresDb = pgp(dbConnectConfig)
 
 if (cluster.isMaster) {
     let cores = os.cpus()
@@ -47,20 +57,12 @@ if (cluster.isMaster) {
 }
 
 export function createServer() {
-    pgtools.createdb(dbCreateConfig, argv.dbName).then(res => {
-        console.log(res)
-    }).catch(err => {
-        if (err.pgErr === undefined || err.pgErr.code != "42P04") {
-            console.error(err)
-        }
-    })
 
     class DB {
         private db: pgPromise.IDatabase<{}>
     
-        constructor(){
-            const pgp:pgPromise.IMain = pgPromise({})
-            this.db = pgp(dbConnectConfig)
+        constructor(db){
+            this.db = db
         }
 
         private formatQueryData(data: JSON, schema: any){
@@ -267,7 +269,7 @@ export function createServer() {
     const ajv = new Ajv();
     const schema = require(__dirname + "/default.table.schema.json")
     const validate = ajv.compile(schema)
-    let db = new DB()
+    let db = new DB(postgresDb)
 
     scribe.post("/v0/:component", parser.json(), (req, res, next) => {
 
