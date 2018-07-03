@@ -4,7 +4,7 @@
   "description": "Database modeling services.",
   "main": "index.js",
   "scripts": {
-    "test": "node_modules/.bin/ts-node node_modules/.bin/jasmine",
+    "test": "node_modules/.bin/mocha --exit --require ts-node/register test/**/*.spec.ts",
     "start": "node_modules/.bin/ts-node src/scribe.cli.ts"
   },
   "repository": {
@@ -31,13 +31,13 @@
   "devDependencies": {
     "@types/diff-match-patch": "^1.0.32",
     "@types/express": "^4.16.0",
-    "@types/jasmine": "^2.8.8",
     "@types/mkdirp": "^0.5.2",
     "@types/node": "^10.3.4",
     "@types/request": "^2.47.1",
     "@types/yargs": "^11.0.0",
-    "axios": "^0.18.0",
-    "jasmine": "^3.1.0",
+    "chai": "^4.1.2",
+    "chai-http": "^4.0.0",
+    "mocha": "^5.2.0",
     "ts-node": "^6.1.1",
     "typescript": "^2.9.2"
   }

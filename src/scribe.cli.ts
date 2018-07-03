@@ -32,14 +32,6 @@ const dbConnectConfig = dbCreateConfig
 dbConnectConfig["database"] = argv.dbName
 
 if (cluster.isMaster) {
-    pgtools.createdb(dbCreateConfig, argv.dbName).then(res => {
-        console.log(res)
-    }).catch(err => {
-        if (err.pgErr === undefined || err.pgErr.code != "42P04") {
-            console.error(err)
-        }
-    })
-
     let cores = os.cpus()
 
     for (let i = 0; i < cores.length; i++) {
@@ -55,6 +47,14 @@ if (cluster.isMaster) {
 }
 
 export function createServer() {
+    pgtools.createdb(dbCreateConfig, argv.dbName).then(res => {
+        console.log(res)
+    }).catch(err => {
+        if (err.pgErr === undefined || err.pgErr.code != "42P04") {
+            console.error(err)
+        }
+    })
+
     class DB {
         private db: pgPromise.IDatabase<{}>
     
