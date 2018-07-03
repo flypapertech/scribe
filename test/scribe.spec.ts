@@ -29,16 +29,17 @@ mocha.describe("scribe", function() {
             })
     })
 
-    mocha.it("Deletes test table", function(done) {
+    mocha.it("DEL component table", function(done) {
         chai.request(baseEndPoint)
             .delete("/v0/testComponent")
             .end((err,res) => {
                 res.should.have.status(200)
+                res.body.should.be.eql([])
                 done()
             })
     })
 
-    mocha.it("Creates entry in component", function(done) {
+    mocha.it("POST to component", function(done) {
         var request = {
             "data": {
                 "something": "somethingstring"
@@ -71,7 +72,7 @@ mocha.describe("scribe", function() {
             })
     })
 
-    mocha.it("Gets all entries", function(done) {
+    mocha.it("GET all entries", function(done) {
         var expectedResponse = [
             {
                 "id": 1,
