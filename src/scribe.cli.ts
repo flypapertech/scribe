@@ -41,6 +41,8 @@ dbConnectConfig["database"] = argv.dbName
 const pgp:pgPromise.IMain = pgPromise({})
 const postgresDb = pgp(dbConnectConfig)
 
+const schema = require(__dirname + "/default.table.schema.json")
+
 if (cluster.isMaster) {
     let cores = os.cpus()
 
@@ -53,10 +55,10 @@ if (cluster.isMaster) {
     })
 
 } else {
-   createServer()
+   createServer(schema)
 }
 
-export function createServer() {
+export function createServer(schema) {
 
     class DB {
         private db: pgPromise.IDatabase<{}>
@@ -112,11 +114,15 @@ export function createServer() {
             
             var createQuery = `CREATE TABLE IF NOT EXISTS ${component}(id serial PRIMARY KEY, ${queryData.sqlColumnSchemas.join(",")})`
             var createHistoryQuery = `CREATE TABLE IF NOT EXISTS ${component}_history(id serial PRIMARY KEY, foreignKey integer REFERENCES ${component} (id) ON DELETE CASCADE, patches json)`
+
+            var ensureAllColumnsExistQuery = `ALTER TABLE ${component} ADD COLUMN IF NOT EXISTS ${queryData.sqlColumnSchemas.join(", ADD COLUMN IF NOT EXISTS ")}`
+
             var insertQuery = `INSERT INTO ${component}(${queryData.sqlColumnNames.join(",")}) values(${queryData.sqlColumnIndexes.join(",")}) RETURNING *`
             var insertHistoryQuery = `INSERT INTO ${component}_history(foreignKey, patches) values($1, CAST ($2 AS JSON)) RETURNING *`
             try {
                 await this.db.query(createQuery)
                 await this.db.query(createHistoryQuery)
+                await this.db.query(ensureAllColumnsExistQuery)
                 let result = await this.db.query(insertQuery, queryData.dataArray)
                 let resultString = JSON.stringify(result[0])
                 const dmp = new DiffMatchPatch.diff_match_patch()
@@ -196,9 +202,11 @@ export function createServer() {
 
             var updateQuery = `UPDATE ${component} SET (${queryData.sqlColumnNames.join(",")}) = (${queryData.sqlColumnIndexes.join(",")}) WHERE id = ${id} RETURNING *`
             var updateHistoryQuery = `UPDATE ${component}_history SET patches = $1 WHERE foreignKey = ${id} RETURNING *`
+            var ensureAllColumnsExistQuery = `ALTER TABLE ${component} ADD COLUMN IF NOT EXISTS ${queryData.sqlColumnSchemas.join(", ADD COLUMN IF NOT EXISTS ")}`
             try {
                 let oldVersion = await this.getSingle(component, id)
                 let oldHistory = await this.getSingleHistoryRaw(component, id)
+                await this.db.query(ensureAllColumnsExistQuery)
                 let result = await this.db.query(updateQuery, queryData.dataArray)
                 const dmp = new DiffMatchPatch.diff_match_patch()
                 let diff = dmp.patch_make(JSON.stringify(result[0]), JSON.stringify(oldVersion[0]))
@@ -267,7 +275,6 @@ export function createServer() {
     }
 
     const ajv = new Ajv();
-    const schema = require(__dirname + "/default.table.schema.json")
     const validate = ajv.compile(schema)
     let db = new DB(postgresDb)
 
@@ -353,7 +360,12 @@ export function createServer() {
         })
     })
 
-    return scribe.listen(argv.port, () => {
+    scribe.get("/v0", parser.urlencoded({ extended: true }), (req, res, next) => {
+        res.statusCode = 200
+        res.send()
+    })
+
+   return scribe.listen(argv.port, () => {
         console.log("Scribe - Process: %sd, Name: %s, Home: %s, Port: %d, Mode: %s, DB Name: %s",
             process.pid,
             argv.name,

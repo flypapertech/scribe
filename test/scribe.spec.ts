@@ -7,10 +7,11 @@ let should = chai.should()
 let baseEndPoint = "http://localhost:1337"
 let server;
 
+const schema = require(__dirname + "/../src/default.table.schema.json")
 chai.use(chaiHttp)
 
 mocha.before(function(done) {
-    server = createServer()
+    server = createServer(schema)
     done()
 })
 mocha.after(function(done) {
@@ -68,5 +69,47 @@ mocha.describe("scribe", function() {
                 res.body.should.be.eql(expectedResponse)
                 done()
             })
+    })
+
+    mocha.it("PUT New Column", function(done){
+        server.close()
+        let newSchema = schema
+        newSchema.required.push("newColumn")
+        newSchema.properties["newColumn"]= {
+            "type": "string"
+        }
+
+        server = createServer(newSchema)
+        var request = {
+            "data": {
+                "something": "somethingstring"
+            },
+            "dateCreated": "2017-06-22T17:57:32Z",
+            "dateModified": "2018-06-22T17:57:32Z",
+            "createdBy": 2,
+            "modifiedBy": 2,
+            "newColumn": "woot"
+        }
+        var expectedResponse = [
+            {
+                "id": 1,
+                "data": {
+                    "something": "somethingstring"
+                },
+                "datecreated": "2017-06-22T21:57:32.000Z",
+                "datemodified": "2018-06-22T21:57:32.000Z",
+                "createdby": 2,
+                "modifiedby": 2,
+                "newcolumn": "\"woot\""
+            }
+        ]
+
+        chai.request(baseEndPoint)
+            .put("/v0/testComponent/1")
+            .send(request)
+            .end((err, res) => {
+                res.body.should.be.eql(expectedResponse)
+                done()
+        })
     })
 })
