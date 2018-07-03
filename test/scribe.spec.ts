@@ -20,9 +20,9 @@ mocha.after(function(done) {
 })
 
 mocha.describe("scribe", function() {
-    mocha.it("Gets all entries", function(done) {
+    mocha.it("Checks that server is running", function(done) {
         chai.request(baseEndPoint)
-            .get("/v0/testComponent/all")
+            .get("/v0")
             .end((err,res) => {
                 res.should.have.status(200)
                 done()
@@ -66,6 +66,28 @@ mocha.describe("scribe", function() {
             .post("/v0/testComponent")
             .send(request)
             .end((err, res) => {
+                res.body.should.be.eql(expectedResponse)
+                done()
+            })
+    })
+
+    mocha.it("Gets all entries", function(done) {
+        var expectedResponse = [
+            {
+                "id": 1,
+                "data": {
+                    "something": "somethingstring"
+                },
+                "datecreated": "2017-06-22T21:57:32.000Z",
+                "datemodified": "2018-06-22T21:57:32.000Z",
+                "createdby": 2,
+                "modifiedby": 2
+            }
+        ]
+        chai.request(baseEndPoint)
+            .get("/v0/testComponent/all")
+            .end((err,res) => {
+                res.should.have.status(200)
                 res.body.should.be.eql(expectedResponse)
                 done()
             })
