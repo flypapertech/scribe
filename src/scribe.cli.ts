@@ -352,12 +352,13 @@ export function createServer() {
     })
 
     return scribe.listen(argv.port, () => {
-        console.log("Scribe - Process: %sd, Name: %s, Home: %s, Port: %d, Mode: %s",
+        console.log("Scribe - Process: %sd, Name: %s, Home: %s, Port: %d, Mode: %s, DB Name: %s",
             process.pid,
             argv.name,
             argv.home,
             argv.port,
-            argv.mode
+            argv.mode,
+            argv.dbName
         )
     })
 }
