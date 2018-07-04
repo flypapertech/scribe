@@ -4,28 +4,28 @@
     "type": "object",
     "required": [
         "data",
-        "dateCreated",
-        "dateModified",
-        "createdBy",
-        "modifiedBy"
+        "date_created",
+        "date_modified",
+        "created_by",
+        "modified_by"
     ],
     "additionalProperties": false,
     "properties": {
         "data": {
             "type": "object"
         },
-        "dateCreated": {
+        "date_created": {
             "type": "string",
             "format": "date-time"
         },
-        "dateModified": {
+        "date_modified": {
             "type": "string",
             "format": "date-time"
         },
-        "createdBy": {
+        "created_by": {
             "type": "integer"
         },
-        "modifiedBy": {
+        "modified_by": {
             "type": "integer"
         }
     }

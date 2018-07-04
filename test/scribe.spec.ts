@@ -44,10 +44,10 @@ mocha.describe("scribe", function() {
             "data": {
                 "something": "somethingstring"
             },
-            "dateCreated": "2017-06-22T17:57:32Z",
-            "dateModified": "2018-06-22T17:57:32Z",
-            "createdBy": 2,
-            "modifiedBy": 2
+            "date_created": "2017-06-22T17:57:32Z",
+            "date_modified": "2018-06-22T17:57:32Z",
+            "created_by": 2,
+            "modified_by": 2
         }
 
         var expectedResponse = [
@@ -56,10 +56,10 @@ mocha.describe("scribe", function() {
                 "data": {
                     "something": "somethingstring"
                 },
-                "datecreated": "2017-06-22T21:57:32.000Z",
-                "datemodified": "2018-06-22T21:57:32.000Z",
-                "createdby": 2,
-                "modifiedby": 2
+                "date_created": "2017-06-22T21:57:32.000Z",
+                "date_modified": "2018-06-22T21:57:32.000Z",
+                "created_by": 2,
+                "modified_by": 2
             }
         ]
 
@@ -79,10 +79,10 @@ mocha.describe("scribe", function() {
                 "data": {
                     "something": "somethingstring"
                 },
-                "datecreated": "2017-06-22T21:57:32.000Z",
-                "datemodified": "2018-06-22T21:57:32.000Z",
-                "createdby": 2,
-                "modifiedby": 2
+                "date_created": "2017-06-22T21:57:32.000Z",
+                "date_modified": "2018-06-22T21:57:32.000Z",
+                "created_by": 2,
+                "modified_by": 2
             }
         ]
         chai.request(baseEndPoint)
@@ -100,10 +100,10 @@ mocha.describe("scribe", function() {
                 "something": "we changed this",
                 "data2": "new thing"
             },
-            "dateCreated": "2017-06-22T17:57:32Z",
-            "dateModified": "2018-06-22T17:57:32Z",
-            "createdBy": 2,
-            "modifiedBy": 2
+            "date_created": "2017-06-22T17:57:32Z",
+            "date_modified": "2018-06-22T17:57:32Z",
+            "created_by": 2,
+            "modified_by": 2
         }
 
         var expectedResponse = [
@@ -113,10 +113,10 @@ mocha.describe("scribe", function() {
                     "something": "we changed this",
                     "data2": "new thing"
                 },
-                "datecreated": "2017-06-22T21:57:32.000Z",
-                "datemodified": "2018-06-22T21:57:32.000Z",
-                "createdby": 2,
-                "modifiedby": 2
+                "date_created": "2017-06-22T21:57:32.000Z",
+                "date_modified": "2018-06-22T21:57:32.000Z",
+                "created_by": 2,
+                "modified_by": 2
             }
         ]
 
@@ -140,20 +140,20 @@ mocha.describe("scribe", function() {
                             "something": "we changed this",
                             "data2": "new thing"
                         },
-                        "datecreated": "2017-06-22T21:57:32.000Z",
-                        "datemodified": "2018-06-22T21:57:32.000Z",
-                        "createdby": 2,
-                        "modifiedby": 2
+                        "date_created": "2017-06-22T21:57:32.000Z",
+                        "date_modified": "2018-06-22T21:57:32.000Z",
+                        "created_by": 2,
+                        "modified_by": 2
                     },
                     {
                         "id": 1,
                         "data": {
                             "something": "somethingstring"
                         },
-                        "datecreated": "2017-06-22T21:57:32.000Z",
-                        "datemodified": "2018-06-22T21:57:32.000Z",
-                        "createdby": 2,
-                        "modifiedby": 2
+                        "date_created": "2017-06-22T21:57:32.000Z",
+                        "date_modified": "2018-06-22T21:57:32.000Z",
+                        "created_by": 2,
+                        "modified_by": 2
                     }
                 ]
             }
@@ -180,10 +180,10 @@ mocha.describe("scribe", function() {
             "data": {
                 "something": "somethingstring"
             },
-            "dateCreated": "2017-06-22T17:57:32Z",
-            "dateModified": "2018-06-22T17:57:32Z",
-            "createdBy": 2,
-            "modifiedBy": 2,
+            "date_created": "2017-06-22T17:57:32Z",
+            "date_modified": "2018-06-22T17:57:32Z",
+            "created_by": 2,
+            "modified_by": 2,
             "newColumn": "woot"
         }
         var expectedResponse = [
@@ -192,10 +192,10 @@ mocha.describe("scribe", function() {
                 "data": {
                     "something": "somethingstring"
                 },
-                "datecreated": "2017-06-22T21:57:32.000Z",
-                "datemodified": "2018-06-22T21:57:32.000Z",
-                "createdby": 2,
-                "modifiedby": 2,
+                "date_created": "2017-06-22T21:57:32.000Z",
+                "date_modified": "2018-06-22T21:57:32.000Z",
+                "created_by": 2,
+                "modified_by": 2,
                 "newcolumn": "\"woot\""
             }
         ]
