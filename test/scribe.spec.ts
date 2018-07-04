@@ -170,8 +170,8 @@ mocha.describe("scribe", function() {
     mocha.it("PUT with schema change", function(done){
         server.close()
         let newSchema = schema
-        newSchema.required.push("newColumn")
-        newSchema.properties["newColumn"]= {
+        newSchema.required.push("new_column")
+        newSchema.properties["new_column"]= {
             "type": "string"
         }
 
