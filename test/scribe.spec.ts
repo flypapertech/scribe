@@ -184,7 +184,7 @@ mocha.describe("scribe", function() {
             "date_modified": "2018-06-22T17:57:32Z",
             "created_by": 2,
             "modified_by": 2,
-            "newColumn": "woot"
+            "new_column": "woot"
         }
         var expectedResponse = [
             {
@@ -196,7 +196,7 @@ mocha.describe("scribe", function() {
                 "date_modified": "2018-06-22T21:57:32.000Z",
                 "created_by": 2,
                 "modified_by": 2,
-                "newcolumn": "\"woot\""
+                "new_column": "\"woot\""
             }
         ]
 
