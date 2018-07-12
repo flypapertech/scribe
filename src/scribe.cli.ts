@@ -10,6 +10,8 @@ import * as Ajv from "ajv"
 import * as DiffMatchPatch from "diff-match-patch"
 import * as glob from "glob"
 import * as path from "path"
+import "axios"
+import Axios from "axios";
 
 const argv = yargs.argv
 
@@ -22,6 +24,7 @@ argv.dbPass = argv.dbPass || process.env.SCRIBE_APP_DB_PASS || ""
 argv.dbUser = argv.dbUser || process.env.SCRIBE_APP_DB_USER || ""
 argv.dbPort = argv.dbPort || process.env.SCRIBE_APP_DB_PORT || 5432
 argv.dbName = argv.dbName || process.env.SCRIBE_APP_DB_NAME || "scribe"
+argv.appSchemaBaseUrl = argv.appSchemaBaseUrl || process.env.SCRIBE_APP_SCHEMA_BASE_URL || "http://localhost:8080/"
 
 const dbCreateConfig = {
     user: argv.dbUser,
@@ -71,48 +74,46 @@ export function createServer(schemaOverride: object = undefined) {
     class DB {
         private db: pgPromise.IDatabase<{}>
         private schemas: Schemas
+        private defaultSchema: object
     
         constructor(db){
             this.db = db
-            this.schemas = this.locateComponentSchemas()
-        }
-
-        private locateComponentSchemas(): Schemas {
-            let schemaFilePaths = glob.sync(`${argv.home}/components/**/*schema.json`)
-            const ajv = new Ajv();
-
             let defaultSchema = schemaOverride
             if (schemaOverride === undefined){
                 defaultSchema = require(__dirname + "/default.table.schema.json")
             }
 
-            let schemas = {
-                "default": {
-                    "schema": defaultSchema,
-                    "validator": ajv.compile(defaultSchema)
-                } as ComponentSchema
-            }
-
-            for (let i = 0; i < schemaFilePaths.length; i++){
-                let schemaFilename = path.basename(schemaFilePaths[i])
-                let component = schemaFilename.substring(0, schemaFilename.indexOf("."))
-                let schema = require(schemaFilePaths[i])
-                schemas[component] = {
-                    "schema": schema,
-                    "validator": ajv.compile(schema)
-                }
-            }
-
-            return schemas
+            this.defaultSchema = defaultSchema
         }
 
-        public getComponentSchema(component: string): ComponentSchema {
-            if (this.schemas.hasOwnProperty(component)){
-                return this.schemas[component]
+        public async getComponentSchema(component: string): Promise<ComponentSchema> {
+            const ajv = new Ajv();
+            let defaultSchema = {
+                "schema": this.defaultSchema,
+                "validator": ajv.compile(this.defaultSchema)
             }
-            else{
-                return this.schemas["default"]
+
+            if (argv.appSchemaBaseUrl === undefined) {
+                return defaultSchema
             }
+
+            try {
+                let response = await Axios.get(`${argv.appSchemaBaseUrl}${component}/schema`)
+
+                if (response.data === undefined){
+                    return defaultSchema
+                }
+
+                return {
+                    schema: response.data,
+                    validator: ajv.compile(response.data)
+                }
+            }
+            catch(err){
+                console.error(err)
+            }
+
+            return defaultSchema
         }
 
         private formatQueryData(data: JSON, schema: any){
@@ -324,9 +325,9 @@ export function createServer(schemaOverride: object = undefined) {
 
     let db = new DB(postgresDb)
 
-    scribe.post("/v0/:component", parser.json(), (req, res, next) => {
+    scribe.post("/v0/:component", parser.json(), async (req, res, next) => {
 
-        let componentSchema = db.getComponentSchema(req.params.component)
+        let componentSchema = await db.getComponentSchema(req.params.component)
         // sanity check json body
         if (componentSchema.validator(req.body) === false){
             res.statusCode = 400
@@ -385,9 +386,9 @@ export function createServer(schemaOverride: object = undefined) {
         // returns array always
     })
     
-    scribe.put("/v0/:component/:id", parser.json(), (req, res, next) => {
+    scribe.put("/v0/:component/:id", parser.json(), async (req, res, next) => {
         // sanity check json body
-        let componentSchema = db.getComponentSchema(req.params.component)
+        let componentSchema = await db.getComponentSchema(req.params.component)
         // sanity check json body
         if (componentSchema.validator(req.body) === false){
             res.statusCode = 400
