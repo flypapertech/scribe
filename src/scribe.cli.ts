@@ -8,6 +8,8 @@ import * as pgPromise from "pg-promise"
 import * as pgtools from "pgtools"
 import * as Ajv from "ajv"
 import * as DiffMatchPatch from "diff-match-patch"
+import * as glob from "glob"
+import * as path from "path"
 
 const argv = yargs.argv
 
@@ -41,8 +43,6 @@ dbConnectConfig["database"] = argv.dbName
 const pgp:pgPromise.IMain = pgPromise({})
 const postgresDb = pgp(dbConnectConfig)
 
-const schema = require(__dirname + "/default.table.schema.json")
-
 if (cluster.isMaster) {
     let cores = os.cpus()
 
@@ -55,16 +55,64 @@ if (cluster.isMaster) {
     })
 
 } else {
-   createServer(schema)
+   createServer()
 }
 
-export function createServer(schema) {
+export function createServer(schemaOverride: object = undefined) {
+    interface Schemas {
+        [key: string]: ComponentSchema
+    }
+
+    interface ComponentSchema {
+        schema: object,
+        validator: Ajv.ValidateFunction
+    }
 
     class DB {
         private db: pgPromise.IDatabase<{}>
+        private schemas: Schemas
     
         constructor(db){
             this.db = db
+            this.schemas = this.locateComponentSchemas()
+        }
+
+        private locateComponentSchemas(): Schemas {
+            let schemaFilePaths = glob.sync(`${argv.home}/components/**/*schema.json`)
+            const ajv = new Ajv();
+
+            let defaultSchema = schemaOverride
+            if (schemaOverride === undefined){
+                defaultSchema = require(__dirname + "/default.table.schema.json")
+            }
+
+            let schemas = {
+                "default": {
+                    "schema": defaultSchema,
+                    "validator": ajv.compile(defaultSchema)
+                } as ComponentSchema
+            }
+
+            for (let i = 0; i < schemaFilePaths.length; i++){
+                let schemaFilename = path.basename(schemaFilePaths[i])
+                let component = schemaFilename.substring(0, schemaFilename.indexOf("."))
+                let schema = require(schemaFilePaths[i])
+                schemas[component] = {
+                    "schema": schema,
+                    "validator": ajv.compile(schema)
+                }
+            }
+
+            return schemas
+        }
+
+        public getComponentSchema(component: string): ComponentSchema {
+            if (this.schemas.hasOwnProperty(component)){
+                return this.schemas[component]
+            }
+            else{
+                return this.schemas["default"]
+            }
         }
 
         private formatQueryData(data: JSON, schema: any){
@@ -108,7 +156,7 @@ export function createServer(schema) {
             return queryData;
         }
     
-        public async createSingle(component: string, data: JSON, schema: any){
+        public async createSingle(component: string, data: JSON, schema: object){
             // make table and record for info sent
             let queryData = this.formatQueryData(data, schema)
             
@@ -274,20 +322,19 @@ export function createServer(schema) {
         }))
     }
 
-    const ajv = new Ajv();
-    const validate = ajv.compile(schema)
     let db = new DB(postgresDb)
 
     scribe.post("/v0/:component", parser.json(), (req, res, next) => {
 
+        let componentSchema = db.getComponentSchema(req.params.component)
         // sanity check json body
-        if (validate(req.body) === false){
+        if (componentSchema.validator(req.body) === false){
             res.statusCode = 400
-            res.send(validate.errors)
+            res.send(componentSchema.validator.errors)
             return;
         }
 
-        db.createSingle(req.params.component, req.body, schema).then(result => {
+        db.createSingle(req.params.component, req.body, componentSchema.schema).then(result => {
             res.send(result)
         })
 
@@ -340,14 +387,16 @@ export function createServer(schema) {
     
     scribe.put("/v0/:component/:id", parser.json(), (req, res, next) => {
         // sanity check json body
-        if (validate(req.body) === false){
+        let componentSchema = db.getComponentSchema(req.params.component)
+        // sanity check json body
+        if (componentSchema.validator(req.body) === false){
             res.statusCode = 400
-            res.send(validate.errors)
+            res.send(componentSchema.validator.errors)
             return;
         }
 
         // update id if it exists
-        db.updateSingle(req.params.component, req.params.id, req.body, schema).then(result => {
+        db.updateSingle(req.params.component, req.params.id, req.body, componentSchema.schema).then(result => {
             res.send(result)
         })
     })
