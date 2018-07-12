@@ -8,10 +8,9 @@ import * as pgPromise from "pg-promise"
 import * as pgtools from "pgtools"
 import * as Ajv from "ajv"
 import * as DiffMatchPatch from "diff-match-patch"
-import * as glob from "glob"
-import * as path from "path"
 import "axios"
 import Axios from "axios";
+import { read } from "fs";
 
 const argv = yargs.argv
 
@@ -181,7 +180,7 @@ export function createServer(schemaOverride: object = undefined) {
                 return result;
             } catch (err){
                 console.log(err)
-                return err;
+                return []
             }
         }
     
@@ -191,7 +190,8 @@ export function createServer(schemaOverride: object = undefined) {
                 let response = await this.db.query(getQuery)
                 return response;
             } catch (err){
-                return err;
+                console.error(err)
+                return []
             }
         }
     
@@ -201,7 +201,8 @@ export function createServer(schemaOverride: object = undefined) {
                 let response = await this.db.query(getQuery, id)
                 return response;
             } catch (err){
-                return err;
+                console.error(err)
+                return []
             }
         }
     
@@ -222,7 +223,8 @@ export function createServer(schemaOverride: object = undefined) {
 
                 return oldVersions
             } catch (err) {
-                return err
+                console.error(err)
+                return []
             }
         }
 
@@ -242,7 +244,8 @@ export function createServer(schemaOverride: object = undefined) {
                 return allHistory
 
             } catch (err) {
-                return err
+                console.error(err)
+                return []
             }
         }
     
@@ -263,7 +266,8 @@ export function createServer(schemaOverride: object = undefined) {
                 let historyResult = await this.db.query(updateHistoryQuery, JSON.stringify(oldHistory[0].patches))
                 return result;
             } catch (err){
-                return err;
+                console.error(err)
+                return []
             }
         }
     
@@ -273,7 +277,8 @@ export function createServer(schemaOverride: object = undefined) {
                 let response = await this.db.query(deleteQuery, id)
                 return response;
             } catch (err){
-                return err;
+                console.error(err)
+                return []
             }
         }
     
@@ -283,7 +288,8 @@ export function createServer(schemaOverride: object = undefined) {
                 let response = await this.db.query(deleteAllQuery)
                 return response;
             } catch (err){
-                return err;
+                console.error(err)
+                return []
             }
         }
 
