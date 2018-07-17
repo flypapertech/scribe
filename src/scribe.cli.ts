@@ -11,6 +11,7 @@ import * as DiffMatchPatch from "diff-match-patch"
 import "axios"
 import Axios from "axios";
 import { read } from "fs";
+import { isObject } from "util";
 
 const argv = yargs.argv
 
@@ -104,9 +105,12 @@ export function createServer(schemaOverride: object = undefined) {
                     return defaultSchema
                 }
 
-                return {
-                    schema: response.data,
-                    validator: ajv.compile(response.data)
+                let validator = ajv.compile(response.data)
+                if (typeof(validator.schema) === "object" && validator.schema !== null){
+                    return {
+                        schema: validator.schema,
+                        validator: validator
+                    }
                 }
             }
             catch(err){
