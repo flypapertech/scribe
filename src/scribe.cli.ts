@@ -96,6 +96,7 @@ export function createServer(schemaOverride: object = undefined) {
                 return defaultSchema
             }
 
+            // TODO should this fall back or error? If scribe can't contact the server then should we be allowing random data in?
             try {
                 let response = await Axios.get(`${argv.appSchemaBaseUrl}${component}/schema`)
 
@@ -331,6 +332,22 @@ export function createServer(schemaOverride: object = undefined) {
 
     let db = new DB(postgresDb)
 
+    scribe.post("/v0/:component/:subcomponent", parser.json(), async (req, res, next) => {
+
+        let componentSchema = await db.getComponentSchema(`${req.params.component}/${req.params.subcomponent}`)
+        // sanity check json body
+        if (componentSchema.validator(req.body) === false){
+            res.statusCode = 400
+            res.send(componentSchema.validator.errors)
+            return;
+        }
+
+        db.createSingle(`${req.params.component}_${req.params.subcomponent}`, req.body, componentSchema.schema).then(result => {
+            res.send(result)
+        })
+        // send response success or fail
+    })
+
     scribe.post("/v0/:component", parser.json(), async (req, res, next) => {
 
         let componentSchema = await db.getComponentSchema(req.params.component)
@@ -348,17 +365,48 @@ export function createServer(schemaOverride: object = undefined) {
         // send response success or fail
     })
 
-    scribe.delete("/v0/:component", parser.urlencoded({ extended: true }), (req, res, next) => {
+    scribe.delete("/v0/:component/:subcomponent", parser.urlencoded({ extended: true }), (req, res, next) => {
         // delete table if it exists
-        db.deleteAll(req.params.component).then(result => {
+        db.deleteAll(`${req.params.component}_${req.params.subcomponent}`).then(result => {
             res.send(result)
         })
         // send response success or fail
     })
 
+    scribe.delete("/v0/:component", parser.urlencoded({ extended: true }), (req, res, next) => {
+        // delete table if it exists
+        db.deleteAll(req.params.component).then(result => {
+            res.send(result)
+        })
+
+        if (req.query.recursive) {
+            // TODO find and delete all subcomponents
+        }
+
+        // send response success or fail
+    })
+
+    scribe.get("/v0/:component/:subcomponent/all", parser.urlencoded({ extended: true }), (req, res, next) => {
+        // get all
+        db.getAll(`${req.params.component}_${req.params.subcomponent}`).then(result => {
+            res.send(result)
+        })
+        // fail if component doesn't exist
+        // returns array always
+    })
+
     scribe.get("/v0/:component/all", parser.urlencoded({ extended: true }), (req, res, next) => {
         // get all
         db.getAll(req.params.component).then(result => {
+            res.send(result)
+        })
+        // fail if component doesn't exist
+        // returns array always
+    })
+
+    scribe.get("/v0/:component/:subcomponent/all/history", parser.urlencoded({ extended: true }), (req, res, next) => {
+        // get all
+        db.getAllHistory(`${req.params.component}_${req.params.subcomponent}`).then(result => {
             res.send(result)
         })
         // fail if component doesn't exist
@@ -374,9 +422,27 @@ export function createServer(schemaOverride: object = undefined) {
         // returns array always
     })
 
+    scribe.get("/v0/:component/:subcomponent/:id", parser.urlencoded({ extended: true }), (req, res, next) => {
+        // get id
+        db.getSingle(`${req.params.component}_${req.params.subcomponent}`, req.params.id).then(result => {
+            res.send(result)
+        })
+        // fail if component doesn't exist
+        // returns array always
+    })
+
     scribe.get("/v0/:component/:id", parser.urlencoded({ extended: true }), (req, res, next) => {
         // get id
         db.getSingle(req.params.component, req.params.id).then(result => {
+            res.send(result)
+        })
+        // fail if component doesn't exist
+        // returns array always
+    })
+
+    scribe.get("/v0/:component/:subcomponent/:id/history", parser.urlencoded({ extended: true }), (req, res, next) => {
+        // get history of id
+        db.getSingleHistory(`${req.params.component}_${req.params.subcomponent}`, req.params.id).then(result => {
             res.send(result)
         })
         // fail if component doesn't exist
@@ -391,6 +457,22 @@ export function createServer(schemaOverride: object = undefined) {
         // fail if component doesn't exist
         // returns array always
     })
+
+    scribe.put("/v0/:component/:subcomponent/:id", parser.json(), async (req, res, next) => {
+        // sanity check json body
+        let componentSchema = await db.getComponentSchema(`${req.params.component}/${req.params.subcomponent}`)
+        // sanity check json body
+        if (componentSchema.validator(req.body) === false){
+            res.statusCode = 400
+            res.send(componentSchema.validator.errors)
+            return;
+        }
+
+        // update id if it exists
+        db.updateSingle(`${req.params.component}_${req.params.subcomponent}`, req.params.id, req.body, componentSchema.schema).then(result => {
+            res.send(result)
+        })
+    })
     
     scribe.put("/v0/:component/:id", parser.json(), async (req, res, next) => {
         // sanity check json body
@@ -404,6 +486,14 @@ export function createServer(schemaOverride: object = undefined) {
 
         // update id if it exists
         db.updateSingle(req.params.component, req.params.id, req.body, componentSchema.schema).then(result => {
+            res.send(result)
+        })
+    })
+
+    scribe.delete("/v0/:component/:subcomponent/:id", parser.urlencoded({ extended: true }), (req, res, next) => {
+        // delete id if it exists
+        // fail if it doesn't exist
+        db.deleteSingle(`${req.params.component}_${req.params.subcomponent}`, req.params.id).then(result => {
             res.send(result)
         })
     })
