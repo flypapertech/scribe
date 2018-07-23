@@ -273,10 +273,8 @@ export function createServer(schemaOverride: object = undefined) {
     
         public async deleteSingle(component: string, id: string){
             var deleteQuery = `DELETE FROM ${component} WHERE id=$1`
-            console.log("deleting " + component + " where id = " + id)
             try {
                 let response = await this.db.query(deleteQuery, id)
-                console.log(response)
                 return response;
             } catch (err){
                 console.error(err)
