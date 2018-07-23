@@ -273,8 +273,10 @@ export function createServer(schemaOverride: object = undefined) {
     
         public async deleteSingle(component: string, id: string){
             var deleteQuery = `DELETE FROM ${component} WHERE id=$1`
+            console.log("deleting " + component + " where id = " + id)
             try {
                 let response = await this.db.query(deleteQuery, id)
+                console.log(response)
                 return response;
             } catch (err){
                 console.error(err)
@@ -365,6 +367,11 @@ export function createServer(schemaOverride: object = undefined) {
     })
 
     scribe.delete("/v0/:component/:subcomponent", parser.urlencoded({ extended: true }), (req, res, next) => {
+        // let :id route fall through
+        if (parseInt(req.params.subcomponent) !== NaN) {
+            next()
+            return
+        }
         // delete table if it exists
         db.deleteAll(`${req.params.component}_${req.params.subcomponent}`).then(result => {
             res.send(result)
