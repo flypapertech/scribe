@@ -281,8 +281,19 @@ export function createServer(schemaOverride: object = undefined) {
                 return []
             }
         }
-    
+
         public async deleteAll(component: string){
+            var deleteQuery = `DELETE * FROM ${component}`
+            try {
+                let response = await this.db.query(deleteQuery)
+                return response;
+            } catch (err){
+                console.error(err)
+                return []
+            }
+        }
+    
+        public async dropTable(component: string){
             var deleteAllQuery = `DROP TABLE IF EXISTS ${component}, ${component}_history`
             try {
                 let response = await this.db.query(deleteAllQuery)
@@ -364,31 +375,6 @@ export function createServer(schemaOverride: object = undefined) {
         // send response success or fail
     })
 
-    scribe.delete("/v0/:component/:subcomponent", parser.urlencoded({ extended: true }), (req, res, next) => {
-        // let :id route fall through
-        if (parseInt(req.params.subcomponent) !== NaN) {
-            next()
-            return
-        }
-        // delete table if it exists
-        db.deleteAll(`${req.params.component}_${req.params.subcomponent}`).then(result => {
-            res.send(result)
-        })
-        // send response success or fail
-    })
-
-    scribe.delete("/v0/:component", parser.urlencoded({ extended: true }), (req, res, next) => {
-        // delete table if it exists
-        db.deleteAll(req.params.component).then(result => {
-            res.send(result)
-        })
-
-        if (req.query.recursive) {
-            // TODO find and delete all subcomponents
-        }
-
-        // send response success or fail
-    })
 
     scribe.get("/v0/:component/:subcomponent/all", parser.urlencoded({ extended: true }), (req, res, next) => {
         // get all
@@ -493,6 +479,21 @@ export function createServer(schemaOverride: object = undefined) {
             res.send(result)
         })
     })
+    scribe.delete("/v0/:component/:subcomponent/all", parser.urlencoded({ extended: true }), (req, res, next) => {
+        // delete id if it exists
+        // fail if it doesn't exist
+        db.deleteAll(`${req.params.component}_${req.params.subcomponent}`).then(result => {
+            res.send(result)
+        })
+    })
+
+    scribe.delete("/v0/:component/all", parser.urlencoded({ extended: true }), (req, res, next) => {
+        // delete id if it exists
+        // fail if it doesn't exist
+        db.deleteAll(req.params.component).then(result => {
+            res.send(result)
+        })
+    })
 
     scribe.delete("/v0/:component/:subcomponent/:id", parser.urlencoded({ extended: true }), (req, res, next) => {
         // delete id if it exists
@@ -508,6 +509,32 @@ export function createServer(schemaOverride: object = undefined) {
         db.deleteSingle(req.params.component, req.params.id).then(result => {
             res.send(result)
         })
+    })
+
+    scribe.delete("/v0/:component/:subcomponent", parser.urlencoded({ extended: true }), (req, res, next) => {
+        // let :id route fall through
+        if (parseInt(req.params.subcomponent) !== NaN) {
+            next()
+            return
+        }
+        // delete table if it exists
+        db.dropTable(`${req.params.component}_${req.params.subcomponent}`).then(result => {
+            res.send(result)
+        })
+        // send response success or fail
+    })
+
+    scribe.delete("/v0/:component", parser.urlencoded({ extended: true }), (req, res, next) => {
+        // delete table if it exists
+        db.dropTable(req.params.component).then(result => {
+            res.send(result)
+        })
+
+        if (req.query.recursive) {
+            // TODO find and delete all subcomponents
+        }
+
+        // send response success or fail
     })
 
     scribe.get("/v0", parser.urlencoded({ extended: true }), (req, res, next) => {
