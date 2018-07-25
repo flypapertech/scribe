@@ -452,8 +452,8 @@ export function createServer(schemaOverride: object = undefined) {
         // sanity check json body
         let componentSchema = await db.getComponentSchema(`${req.params.component}/${req.params.subcomponent}`)
         // sanity check json body
-        if (componentSchema.validator(req.body) === false){
-            res.statusCode = 400
+        if (componentSchema.validator(req.body) === false) {
+            res.status(400)
             res.send(componentSchema.validator.errors)
             return;
         }
@@ -468,8 +468,8 @@ export function createServer(schemaOverride: object = undefined) {
         // sanity check json body
         let componentSchema = await db.getComponentSchema(req.params.component)
         // sanity check json body
-        if (componentSchema.validator(req.body) === false){
-            res.statusCode = 400
+        if (componentSchema.validator(req.body) === false) {
+            res.status(400)
             res.send(componentSchema.validator.errors)
             return;
         }
