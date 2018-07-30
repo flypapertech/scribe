@@ -283,7 +283,7 @@ export function createServer(schemaOverride: object = undefined) {
         }
 
         public async deleteAll(component: string){
-            var deleteQuery = `TRUNCATE ${component} RESTART IDENTITY`
+            var deleteQuery = `TRUNCATE ${component} RESTART IDENTITY CASCADE`
             try {
                 let response = await this.db.query(deleteQuery)
                 return response;
