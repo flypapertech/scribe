@@ -123,10 +123,11 @@ export function createServer(schemaOverride: object = undefined) {
                 dataArray: []
             }
 
+            var ignoredKeyCount = 0
             Object.keys(schema.properties).forEach(function(key, index){
                 if (key !== "id") {
                     queryData.sqlColumnNames.push(key)
-                    queryData.sqlColumnIndexes.push(`$${index+1}`)
+                    queryData.sqlColumnIndexes.push(`$${index-ignoredKeyCount+1}`)
                     // TODO sanitize data input
                     queryData.dataArray.push(JSON.stringify(data[key]))
                     var property = schema.properties[key]
@@ -152,6 +153,9 @@ export function createServer(schemaOverride: object = undefined) {
                         default:
                             break;
                     } 
+                }
+                else {
+                    ignoredKeyCount++;
                 }
             })
 
