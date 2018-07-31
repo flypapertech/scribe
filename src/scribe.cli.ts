@@ -124,13 +124,13 @@ export function createServer(schemaOverride: object = undefined) {
             }
 
             Object.keys(schema.properties).forEach(function(key, index){
-                queryData.sqlColumnNames.push(key)
-                queryData.sqlColumnIndexes.push(`$${index+1}`)
-                // TODO sanitize data input
-                queryData.dataArray.push(JSON.stringify(data[key]))
-                var property = schema.properties[key]
-
                 if (key !== "id") {
+                    queryData.sqlColumnNames.push(key)
+                    queryData.sqlColumnIndexes.push(`$${index+1}`)
+                    // TODO sanitize data input
+                    queryData.dataArray.push(JSON.stringify(data[key]))
+                    var property = schema.properties[key]
+
                     switch (property.type) {
                         case "integer":
                             queryData.sqlColumnSchemas.push(`${key} integer`)
@@ -148,7 +148,7 @@ export function createServer(schemaOverride: object = undefined) {
 
                         case "object":
                             queryData.sqlColumnSchemas.push(`${key} json`)
-                            
+
                         default:
                             break;
                     } 
