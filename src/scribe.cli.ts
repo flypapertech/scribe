@@ -130,27 +130,29 @@ export function createServer(schemaOverride: object = undefined) {
                 queryData.dataArray.push(JSON.stringify(data[key]))
                 var property = schema.properties[key]
 
-                switch (property.type) {
-                    case "integer":
-                        queryData.sqlColumnSchemas.push(`${key} integer`)
-                        break;
+                if (key !== "id") {
+                    switch (property.type) {
+                        case "integer":
+                            queryData.sqlColumnSchemas.push(`${key} integer`)
+                            break;
 
-                    case "string":
-                        if (property.format === "date-time"){
-                            queryData.sqlColumnSchemas.push(`${key} timestamp`)
-                        }
-                        else {
-                            queryData.sqlColumnSchemas.push(`${key} text`)
-                        }
+                        case "string":
+                            if (property.format === "date-time"){
+                                queryData.sqlColumnSchemas.push(`${key} timestamp`)
+                            }
+                            else {
+                                queryData.sqlColumnSchemas.push(`${key} text`)
+                            }
 
-                        break;
+                            break;
 
-                    case "object":
-                        queryData.sqlColumnSchemas.push(`${key} json`)
-                    
-                    default:
-                        break;
-                } 
+                        case "object":
+                            queryData.sqlColumnSchemas.push(`${key} json`)
+                            
+                        default:
+                            break;
+                    } 
+                }
             })
 
             return queryData;
