@@ -191,7 +191,7 @@ export function createServer(schemaOverride: object = undefined) {
         }
     
         public async getAll(component: string){
-            var getQuery = `SELECT * FROM ${component}`
+            var getQuery = `SELECT * FROM ${component} ORDER BY id`
             try {
                 let response = await this.db.query(getQuery)
                 return response;
@@ -202,7 +202,7 @@ export function createServer(schemaOverride: object = undefined) {
         }
     
         public async getSingle(component: string, id:string){
-            var getQuery = `SELECT * FROM ${component} WHERE id=$1`
+            var getQuery = `SELECT * FROM ${component} WHERE id=$1 ORDER BY id`
             try {
                 let response = await this.db.query(getQuery, id)
                 return response;
