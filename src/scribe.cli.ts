@@ -34,14 +34,14 @@ const dbCreateConfig = {
 pgtools.createdb(dbCreateConfig, argv.dbName).then(res => {
     console.log(res)
 }).catch(err => {
-    if (err.pgErr === undefined || err.pgErr.code != "42P04") {
+    if (err.pgErr === undefined || err.pgErr.code !== "42P04") {
         console.error(err)
     }
 })
 
 const dbConnectConfig = dbCreateConfig
 dbConnectConfig["database"] = argv.dbName
-const pgp:pgPromise.IMain = pgPromise({})
+const pgp: pgPromise.IMain = pgPromise({})
 const postgresDb = pgp(dbConnectConfig)
 
 if (cluster.isMaster) {
@@ -73,11 +73,11 @@ export function createServer(schemaOverride: object = undefined) {
         private db: pgPromise.IDatabase<{}>
         private schemas: Schemas
         private defaultSchema: object
-    
-        constructor(db){
+
+        constructor(db) {
             this.db = db
             let defaultSchema = schemaOverride
-            if (schemaOverride === undefined){
+            if (schemaOverride === undefined) {
                 defaultSchema = require(__dirname + "/default.table.schema.json")
             }
 
@@ -99,7 +99,7 @@ export function createServer(schemaOverride: object = undefined) {
             try {
                 let response = await Axios.get(`${argv.appSchemaBaseUrl}${component}/schema`)
 
-                if (response.data === undefined){
+                if (response.data === undefined) {
                     return defaultSchema
                 }
 
@@ -108,29 +108,29 @@ export function createServer(schemaOverride: object = undefined) {
                     validator: ajv.compile(response.data)
                 }
             }
-            catch(err){
+            catch (err) {
                 console.error(err)
             }
 
             return defaultSchema
         }
 
-        private formatQueryData(data: JSON, schema: any){
-            var queryData = {
+        private formatQueryData(data: JSON, schema: any) {
+            let queryData = {
                 sqlColumnSchemas: [],
                 sqlColumnNames: [],
                 sqlColumnIndexes: [],
                 dataArray: []
             }
 
-            var ignoredKeyCount = 0
-            Object.keys(schema.properties).forEach(function(key, index){
+            let ignoredKeyCount = 0
+            Object.keys(schema.properties).forEach(function(key, index) {
                 if (key !== "id") {
                     queryData.sqlColumnNames.push(key)
-                    queryData.sqlColumnIndexes.push(`$${index-ignoredKeyCount+1}`)
+                    queryData.sqlColumnIndexes.push(`$${index - ignoredKeyCount + 1}`)
                     // TODO sanitize data input
                     queryData.dataArray.push(JSON.stringify(data[key]))
-                    var property = schema.properties[key]
+                    let property = schema.properties[key]
 
                     switch (property.type) {
                         case "integer":
@@ -138,7 +138,7 @@ export function createServer(schemaOverride: object = undefined) {
                             break;
 
                         case "string":
-                            if (property.format === "date-time"){
+                            if (property.format === "date-time") {
                                 queryData.sqlColumnSchemas.push(`${key} timestamp`)
                             }
                             else {
@@ -152,7 +152,7 @@ export function createServer(schemaOverride: object = undefined) {
 
                         default:
                             break;
-                    } 
+                    }
                 }
                 else {
                     ignoredKeyCount++;
@@ -161,18 +161,18 @@ export function createServer(schemaOverride: object = undefined) {
 
             return queryData;
         }
-    
-        public async createSingle(component: string, data: JSON, schema: object){
+
+        public async createSingle(component: string, data: JSON, schema: object) {
             // make table and record for info sent
             let queryData = this.formatQueryData(data, schema)
-            
-            var createQuery = `CREATE TABLE IF NOT EXISTS ${component}(id serial PRIMARY KEY, ${queryData.sqlColumnSchemas.join(",")})`
-            var createHistoryQuery = `CREATE TABLE IF NOT EXISTS ${component}_history(id serial PRIMARY KEY, foreignKey integer REFERENCES ${component} (id) ON DELETE CASCADE, patches json)`
 
-            var ensureAllColumnsExistQuery = `ALTER TABLE ${component} ADD COLUMN IF NOT EXISTS ${queryData.sqlColumnSchemas.join(", ADD COLUMN IF NOT EXISTS ")}`
+            let createQuery = `CREATE TABLE IF NOT EXISTS ${component}(id serial PRIMARY KEY, ${queryData.sqlColumnSchemas.join(",")})`
+            let createHistoryQuery = `CREATE TABLE IF NOT EXISTS ${component}_history(id serial PRIMARY KEY, foreignKey integer REFERENCES ${component} (id) ON DELETE CASCADE, patches json)`
 
-            var insertQuery = `INSERT INTO ${component}(${queryData.sqlColumnNames.join(",")}) values(${queryData.sqlColumnIndexes.join(",")}) RETURNING *`
-            var insertHistoryQuery = `INSERT INTO ${component}_history(foreignKey, patches) values($1, CAST ($2 AS JSON)) RETURNING *`
+            let ensureAllColumnsExistQuery = `ALTER TABLE ${component} ADD COLUMN IF NOT EXISTS ${queryData.sqlColumnSchemas.join(", ADD COLUMN IF NOT EXISTS ")}`
+
+            let insertQuery = `INSERT INTO ${component}(${queryData.sqlColumnNames.join(",")}) values(${queryData.sqlColumnIndexes.join(",")}) RETURNING *`
+            let insertHistoryQuery = `INSERT INTO ${component}_history(foreignKey, patches) values($1, CAST ($2 AS JSON)) RETURNING *`
             try {
                 await this.db.query(createQuery)
                 await this.db.query(createHistoryQuery)
@@ -181,49 +181,49 @@ export function createServer(schemaOverride: object = undefined) {
                 let resultString = JSON.stringify(result[0])
                 const dmp = new DiffMatchPatch.diff_match_patch()
                 let diff = dmp.patch_make(resultString, "")
-                var diffValues = [result[0].id, JSON.stringify([dmp.patch_toText(diff)])]
+                let diffValues = [result[0].id, JSON.stringify([dmp.patch_toText(diff)])]
                 let historyResult = await this.db.query(insertHistoryQuery, diffValues)
                 return result;
-            } catch (err){
+            } catch (err) {
                 console.log(err)
                 return []
             }
         }
-    
-        public async getAll(component: string){
-            var getQuery = `SELECT * FROM ${component} ORDER BY id`
+
+        public async getAll(component: string) {
+            let getQuery = `SELECT * FROM ${component} ORDER BY id`
             try {
                 let response = await this.db.query(getQuery)
                 return response;
-            } catch (err){
+            } catch (err) {
                 console.error(err)
                 return []
             }
         }
-    
-        public async getSingle(component: string, id:string){
-            var getQuery = `SELECT * FROM ${component} WHERE id=$1 ORDER BY id`
+
+        public async getSingle(component: string, id: string) {
+            let getQuery = `SELECT * FROM ${component} WHERE id=$1 ORDER BY id`
             try {
                 let response = await this.db.query(getQuery, id)
                 return response;
-            } catch (err){
+            } catch (err) {
                 console.error(err)
                 return []
             }
         }
-    
-        public async getSingleHistory(component: string, id:string){ 
+
+        public async getSingleHistory(component: string, id: string) {
             try {
                 let rawHistory = await this.getSingleHistoryRaw(component, id)
                 rawHistory = rawHistory[0]
                 let currentVersion = await this.getSingle(component, id)
                 currentVersion = JSON.stringify(currentVersion[0])
                 const dmp = new DiffMatchPatch.diff_match_patch()
-                var oldVersions = []
+                let oldVersions = []
                 oldVersions.push(JSON.parse(currentVersion))
                 // ignore original empty object hence >= 1
-                for (var i = rawHistory.patches.length-1; i >= 1; i--) {
-                    currentVersion = dmp.patch_apply(dmp.patch_fromText(rawHistory.patches[i]),currentVersion)[0]
+                for (let i = rawHistory.patches.length - 1; i >= 1; i--) {
+                    currentVersion = dmp.patch_apply(dmp.patch_fromText(rawHistory.patches[i]), currentVersion)[0]
                     oldVersions.push(JSON.parse(currentVersion))
                 }
 
@@ -254,13 +254,13 @@ export function createServer(schemaOverride: object = undefined) {
                 return []
             }
         }
-    
-        public async updateSingle(component: string, id: string, data: JSON, schema: object){
+
+        public async updateSingle(component: string, id: string, data: JSON, schema: object) {
             let queryData = this.formatQueryData(data, schema)
 
-            var updateQuery = `UPDATE ${component} SET (${queryData.sqlColumnNames.join(",")}) = (${queryData.sqlColumnIndexes.join(",")}) WHERE id = ${id} RETURNING *`
-            var updateHistoryQuery = `UPDATE ${component}_history SET patches = $1 WHERE foreignKey = ${id} RETURNING *`
-            var ensureAllColumnsExistQuery = `ALTER TABLE ${component} ADD COLUMN IF NOT EXISTS ${queryData.sqlColumnSchemas.join(", ADD COLUMN IF NOT EXISTS ")}`
+            let updateQuery = `UPDATE ${component} SET (${queryData.sqlColumnNames.join(",")}) = (${queryData.sqlColumnIndexes.join(",")}) WHERE id = ${id} RETURNING *`
+            let updateHistoryQuery = `UPDATE ${component}_history SET patches = $1 WHERE foreignKey = ${id} RETURNING *`
+            let ensureAllColumnsExistQuery = `ALTER TABLE ${component} ADD COLUMN IF NOT EXISTS ${queryData.sqlColumnSchemas.join(", ADD COLUMN IF NOT EXISTS ")}`
             try {
                 let oldVersion = await this.getSingle(component, id)
                 let oldHistory = await this.getSingleHistoryRaw(component, id)
@@ -271,51 +271,51 @@ export function createServer(schemaOverride: object = undefined) {
                 oldHistory[0].patches.push(dmp.patch_toText(diff))
                 let historyResult = await this.db.query(updateHistoryQuery, JSON.stringify(oldHistory[0].patches))
                 return result;
-            } catch (err){
+            } catch (err) {
                 console.error(err)
                 return []
             }
         }
-    
-        public async deleteSingle(component: string, id: string){
-            var deleteQuery = `DELETE FROM ${component} WHERE id=$1`
+
+        public async deleteSingle(component: string, id: string) {
+            let deleteQuery = `DELETE FROM ${component} WHERE id=$1`
             try {
                 let response = await this.db.query(deleteQuery, id)
                 return response;
-            } catch (err){
+            } catch (err) {
                 console.error(err)
                 return []
             }
         }
 
-        public async deleteAll(component: string){
-            var deleteQuery = `TRUNCATE ${component} RESTART IDENTITY CASCADE`
+        public async deleteAll(component: string) {
+            let deleteQuery = `TRUNCATE ${component} RESTART IDENTITY CASCADE`
             try {
                 let response = await this.db.query(deleteQuery)
                 return response;
-            } catch (err){
-                console.error(err)
-                return []
-            }
-        }
-    
-        public async dropTable(component: string){
-            var deleteAllQuery = `DROP TABLE IF EXISTS ${component}, ${component}_history`
-            try {
-                let response = await this.db.query(deleteAllQuery)
-                return response;
-            } catch (err){
+            } catch (err) {
                 console.error(err)
                 return []
             }
         }
 
-        private async getSingleHistoryRaw(component: string, id: string){
-            var getQuery = `SELECT * FROM ${component}_history WHERE foreignKey=$1`
+        public async dropTable(component: string) {
+            let deleteAllQuery = `DROP TABLE IF EXISTS ${component}, ${component}_history`
+            try {
+                let response = await this.db.query(deleteAllQuery)
+                return response;
+            } catch (err) {
+                console.error(err)
+                return []
+            }
+        }
+
+        private async getSingleHistoryRaw(component: string, id: string) {
+            let getQuery = `SELECT * FROM ${component}_history WHERE foreignKey=$1`
             try {
                 let response = await this.db.query(getQuery, id)
                 return response;
-            } catch (err){
+            } catch (err) {
                 return err;
             }
         }
@@ -352,7 +352,7 @@ export function createServer(schemaOverride: object = undefined) {
 
         let componentSchema = await db.getComponentSchema(`${req.params.component}/${req.params.subcomponent}`)
         // sanity check json body
-        if (componentSchema.validator(req.body) === false){
+        if (componentSchema.validator(req.body) === false) {
             res.statusCode = 400
             res.send(componentSchema.validator.errors)
             return;
@@ -368,7 +368,7 @@ export function createServer(schemaOverride: object = undefined) {
 
         let componentSchema = await db.getComponentSchema(req.params.component)
         // sanity check json body
-        if (componentSchema.validator(req.body) === false){
+        if (componentSchema.validator(req.body) === false) {
             res.statusCode = 400
             res.send(componentSchema.validator.errors)
             return;
@@ -469,7 +469,7 @@ export function createServer(schemaOverride: object = undefined) {
             res.send(result)
         })
     })
-    
+
     scribe.put("/v0/:component/:id", parser.json(), async (req, res, next) => {
         // sanity check json body
         let componentSchema = await db.getComponentSchema(req.params.component)
