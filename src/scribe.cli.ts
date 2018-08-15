@@ -59,6 +59,9 @@ if (cluster.isMaster) {
    createServer()
 }
 
+const get = (p, o) =>
+    p.reduce((xs, x) => (xs && xs[x]) ? xs[x] : null, o)
+
 export function createServer(schemaOverride: object = undefined) {
     interface Schemas {
         [key: string]: ComponentSchema
@@ -189,12 +192,40 @@ export function createServer(schemaOverride: object = undefined) {
                 return []
             }
         }
-
-        public async getAll(component: string) {
+        public async getAll(component: string, filter: any) {
             let getQuery = `SELECT * FROM ${component} ORDER BY id`
             try {
                 let response = await this.db.query(getQuery)
+                if (filter) {
+                    try {
+                        filter = JSON.parse(filter)
+                        response = response.filter(entry => {
+                            let matchedFilters = 0
+                            let filterCount = Object.keys(filter).length
+                            for (let key in filter) {
+                                let nestedKeyArray = key.split(".")
+                                let entryValue = get(nestedKeyArray, entry)
+                                if (entryValue) {
+                                    if (filter[key] instanceof Array) {
+                                        let filterArray = filter[key] as Array<any>
+                                        if (filterArray.indexOf(entryValue) !== -1) {
+                                            matchedFilters++
+                                        }
+                                    }
+                                }
+                            }
+
+                            return (matchedFilters === filterCount)
+                        })
+                    }
+                    catch (err) {
+                        console.error(err)
+                        console.error("Failed to apply filter: ")
+                        console.error(filter)
+                    }
+                }
                 return response;
+
             } catch (err) {
                 console.error(err)
                 return []
@@ -234,9 +265,9 @@ export function createServer(schemaOverride: object = undefined) {
             }
         }
 
-        public async getAllHistory(component: string) {
+        public async getAllHistory(component: string, filter: any) {
             try {
-                let allRows = await this.getAll(component)
+                let allRows = await this.getAll(component, filter)
                 let allHistory = []
                 for (let entry of allRows) {
                     // TODO speed this up by hitting the db only once
@@ -382,7 +413,7 @@ export function createServer(schemaOverride: object = undefined) {
 
     scribe.get("/v0/:component/:subcomponent/all", parser.urlencoded({ extended: true }), (req, res, next) => {
         // get all
-        db.getAll(`${req.params.component}_${req.params.subcomponent}`).then(result => {
+        db.getAll(`${req.params.component}_${req.params.subcomponent}`, req.query.filter).then(result => {
             res.send(result)
         })
         // fail if component doesn't exist
@@ -391,7 +422,7 @@ export function createServer(schemaOverride: object = undefined) {
 
     scribe.get("/v0/:component/all", parser.urlencoded({ extended: true }), (req, res, next) => {
         // get all
-        db.getAll(req.params.component).then(result => {
+        db.getAll(req.params.component, req.query.filter).then(result => {
             res.send(result)
         })
         // fail if component doesn't exist
@@ -400,7 +431,7 @@ export function createServer(schemaOverride: object = undefined) {
 
     scribe.get("/v0/:component/:subcomponent/all/history", parser.urlencoded({ extended: true }), (req, res, next) => {
         // get all
-        db.getAllHistory(`${req.params.component}_${req.params.subcomponent}`).then(result => {
+        db.getAllHistory(`${req.params.component}_${req.params.subcomponent}`, req.query.filter).then(result => {
             res.send(result)
         })
         // fail if component doesn't exist
@@ -409,7 +440,7 @@ export function createServer(schemaOverride: object = undefined) {
 
     scribe.get("/v0/:component/all/history", parser.urlencoded({ extended: true }), (req, res, next) => {
         // get all
-        db.getAllHistory(req.params.component).then(result => {
+        db.getAllHistory(req.params.component, req.query.filter).then(result => {
             res.send(result)
         })
         // fail if component doesn't exist
@@ -542,6 +573,10 @@ export function createServer(schemaOverride: object = undefined) {
     scribe.get("/v0", parser.urlencoded({ extended: true }), (req, res, next) => {
         res.statusCode = 200
         res.send()
+    })
+
+    scribe.all("*", (req, res, next) => {
+        res.status(400).send("Unhandled Route")
     })
 
    return scribe.listen(argv.port, () => {
