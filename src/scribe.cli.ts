@@ -197,6 +197,7 @@ export function createServer(schemaOverride: object = undefined) {
             try {
                 let response = await this.db.query(getQuery)
                 if (filter) {
+                    console.log(filter)
                     try {
                         filter = JSON.parse(filter)
                         response = response.filter(entry => {
@@ -206,11 +207,16 @@ export function createServer(schemaOverride: object = undefined) {
                                 let nestedKeyArray = key.split(".")
                                 let entryValue = get(nestedKeyArray, entry)
                                 if (entryValue) {
+                                    let filterArray: Array<any>
                                     if (filter[key] instanceof Array) {
-                                        let filterArray = filter[key] as Array<any>
-                                        if (filterArray.indexOf(entryValue) !== -1) {
-                                            matchedFilters++
-                                        }
+                                        filterArray = filter[key] as Array<any>
+                                    }
+                                    else {
+                                        filterArray = [filter[key]]
+                                    }
+
+                                    if (filterArray.find(x => JSON.stringify(x) === JSON.stringify(entryValue))) {
+                                        matchedFilters++
                                     }
                                 }
                             }
