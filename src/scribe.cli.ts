@@ -197,7 +197,6 @@ export function createServer(schemaOverride: object = undefined) {
             try {
                 let response = await this.db.query(getQuery)
                 if (filter) {
-                    console.log(filter)
                     try {
                         filter = JSON.parse(filter)
                         response = response.filter(entry => {
