@@ -152,9 +152,11 @@ export function createServer(schemaOverride: object = undefined) {
 
                         case "object":
                             queryData.sqlColumnSchemas.push(`${key} json`)
+                            break;
 
                         case "number":
                             queryData.sqlColumnSchemas.push(`${key} float8`)
+                            break;
 
                         default:
                             break;
