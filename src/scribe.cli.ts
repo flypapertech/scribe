@@ -197,7 +197,7 @@ export function createServer(schemaOverride: object = undefined) {
                 return []
             }
         }
-        public async getAll(component: string, filter: any) {
+        public async getAll(component: string, filter: any, groupBy: any) {
             let getQuery = `SELECT * FROM ${component} ORDER BY id`
             try {
                 let response = await this.db.query(getQuery)
@@ -234,6 +234,16 @@ export function createServer(schemaOverride: object = undefined) {
                         console.error(filter)
                     }
                 }
+
+                if (groupBy && typeof groupBy === "string") {
+                    response = response.reduce((grouped, item) => {
+                        let key = get(groupBy.split("."), item)
+                        grouped[key] = grouped[key] || [];
+                        grouped[key].push(item);
+                        return grouped;
+                    }, {});
+                }
+
                 return response;
 
             } catch (err) {
@@ -275,9 +285,9 @@ export function createServer(schemaOverride: object = undefined) {
             }
         }
 
-        public async getAllHistory(component: string, filter: any) {
+        public async getAllHistory(component: string, filter: any, groupBy: any) {
             try {
-                let allRows = await this.getAll(component, filter)
+                let allRows = await this.getAll(component, filter, groupBy)
                 let allHistory = []
                 for (let entry of allRows) {
                     // TODO speed this up by hitting the db only once
@@ -423,7 +433,7 @@ export function createServer(schemaOverride: object = undefined) {
 
     scribe.get("/v0/:component/:subcomponent/all", parser.urlencoded({ extended: true }), (req, res, next) => {
         // get all
-        db.getAll(`${req.params.component}_${req.params.subcomponent}`, req.query.filter).then(result => {
+        db.getAll(`${req.params.component}_${req.params.subcomponent}`, req.query.filter, req.query.groupBy).then(result => {
             res.send(result)
         })
         // fail if component doesn't exist
@@ -432,7 +442,7 @@ export function createServer(schemaOverride: object = undefined) {
 
     scribe.get("/v0/:component/all", parser.urlencoded({ extended: true }), (req, res, next) => {
         // get all
-        db.getAll(req.params.component, req.query.filter).then(result => {
+        db.getAll(req.params.component, req.query.filter, req.query.groupBy).then(result => {
             res.send(result)
         })
         // fail if component doesn't exist
@@ -441,7 +451,7 @@ export function createServer(schemaOverride: object = undefined) {
 
     scribe.get("/v0/:component/:subcomponent/all/history", parser.urlencoded({ extended: true }), (req, res, next) => {
         // get all
-        db.getAllHistory(`${req.params.component}_${req.params.subcomponent}`, req.query.filter).then(result => {
+        db.getAllHistory(`${req.params.component}_${req.params.subcomponent}`, req.query.filter, req.query.groupBy).then(result => {
             res.send(result)
         })
         // fail if component doesn't exist
@@ -450,7 +460,7 @@ export function createServer(schemaOverride: object = undefined) {
 
     scribe.get("/v0/:component/all/history", parser.urlencoded({ extended: true }), (req, res, next) => {
         // get all
-        db.getAllHistory(req.params.component, req.query.filter).then(result => {
+        db.getAllHistory(req.params.component, req.query.filter, req.query.groupBy).then(result => {
             res.send(result)
         })
         // fail if component doesn't exist
