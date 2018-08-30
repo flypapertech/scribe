@@ -10,8 +10,6 @@ import * as Ajv from "ajv"
 import * as DiffMatchPatch from "diff-match-patch"
 import "axios"
 import Axios from "axios";
-import { read } from "fs";
-import { isObject } from "util";
 
 const argv = yargs.argv
 
@@ -36,14 +34,14 @@ const dbCreateConfig = {
 pgtools.createdb(dbCreateConfig, argv.dbName).then(res => {
     console.log(res)
 }).catch(err => {
-    if (err.pgErr === undefined || err.pgErr.code != "42P04") {
+    if (err.pgErr === undefined || err.pgErr.code !== "42P04") {
         console.error(err)
     }
 })
 
 const dbConnectConfig = dbCreateConfig
 dbConnectConfig["database"] = argv.dbName
-const pgp:pgPromise.IMain = pgPromise({})
+const pgp: pgPromise.IMain = pgPromise({})
 const postgresDb = pgp(dbConnectConfig)
 
 if (cluster.isMaster) {
@@ -61,6 +59,9 @@ if (cluster.isMaster) {
    createServer()
 }
 
+const get = (p, o) =>
+    p.reduce((xs, x) => (xs && xs[x]) ? xs[x] : null, o)
+
 export function createServer(schemaOverride: object = undefined) {
     interface Schemas {
         [key: string]: ComponentSchema
@@ -75,11 +76,11 @@ export function createServer(schemaOverride: object = undefined) {
         private db: pgPromise.IDatabase<{}>
         private schemas: Schemas
         private defaultSchema: object
-    
-        constructor(db){
+
+        constructor(db) {
             this.db = db
             let defaultSchema = schemaOverride
-            if (schemaOverride === undefined){
+            if (schemaOverride === undefined) {
                 defaultSchema = require(__dirname + "/default.table.schema.json")
             }
 
@@ -101,77 +102,85 @@ export function createServer(schemaOverride: object = undefined) {
             try {
                 let response = await Axios.get(`${argv.appSchemaBaseUrl}${component}/schema`)
 
-                if (response.data === undefined){
+                if (response.data === undefined) {
                     return defaultSchema
                 }
 
-                let validator = ajv.compile(response.data)
-                if (typeof(validator.schema) === "object" && validator.schema !== null){
-                    return {
-                        schema: validator.schema,
-                        validator: validator
-                    }
+                return {
+                    schema: response.data,
+                    validator: ajv.compile(response.data)
                 }
             }
-            catch(err){
+            catch (err) {
                 console.error(err)
             }
 
             return defaultSchema
         }
 
-        private formatQueryData(data: JSON, schema: any){
-            var queryData = {
+        private formatQueryData(data: JSON, schema: any) {
+            let queryData = {
                 sqlColumnSchemas: [],
                 sqlColumnNames: [],
                 sqlColumnIndexes: [],
                 dataArray: []
             }
 
-            Object.keys(schema.properties).forEach(function(key, index){
-                queryData.sqlColumnNames.push(key)
-                queryData.sqlColumnIndexes.push(`$${index+1}`)
-                // TODO sanitize data input
-                queryData.dataArray.push(JSON.stringify(data[key]))
-                var property = schema.properties[key]
+            let ignoredKeyCount = 0
+            Object.keys(schema.properties).forEach(function(key, index) {
+                if (key !== "id") {
+                    queryData.sqlColumnNames.push(key)
+                    queryData.sqlColumnIndexes.push(`$${index - ignoredKeyCount + 1}`)
+                    // TODO sanitize data input
+                    queryData.dataArray.push(JSON.stringify(data[key]))
+                    let property = schema.properties[key]
 
-                switch (property.type) {
-                    case "integer":
-                        queryData.sqlColumnSchemas.push(`${key} integer`)
-                        break;
+                    switch (property.type) {
+                        case "integer":
+                            queryData.sqlColumnSchemas.push(`${key} integer`)
+                            break;
 
-                    case "string":
-                        if (property.format === "date-time"){
-                            queryData.sqlColumnSchemas.push(`${key} timestamp`)
-                        }
-                        else {
-                            queryData.sqlColumnSchemas.push(`${key} text`)
-                        }
+                        case "string":
+                            if (property.format === "date-time") {
+                                queryData.sqlColumnSchemas.push(`${key} timestamp`)
+                            }
+                            else {
+                                queryData.sqlColumnSchemas.push(`${key} text`)
+                            }
 
-                        break;
+                            break;
 
-                    case "object":
-                        queryData.sqlColumnSchemas.push(`${key} json`)
-                    
-                    default:
-                        break;
-                } 
+                        case "object":
+                            queryData.sqlColumnSchemas.push(`${key} json`)
+                            break;
+
+                        case "number":
+                            queryData.sqlColumnSchemas.push(`${key} float8`)
+                            break;
+
+                        default:
+                            break;
+                    }
+                }
+                else {
+                    ignoredKeyCount++;
+                }
             })
 
             return queryData;
         }
-    
-        public async createSingle(component: string, data: JSON, schema: object){
+
+        public async createSingle(component: string, data: JSON, schema: object) {
             // make table and record for info sent
             let queryData = this.formatQueryData(data, schema)
-            
-            var createQuery = `CREATE TABLE IF NOT EXISTS ${component}(id serial PRIMARY KEY, ${queryData.sqlColumnSchemas.join(",")})`
-            var createHistoryQuery = `CREATE TABLE IF NOT EXISTS ${component}_history(id serial PRIMARY KEY, foreignKey integer REFERENCES ${component} (id) ON DELETE CASCADE, patches json)`
 
-            var ensureAllColumnsExistQuery = `ALTER TABLE ${component} ADD COLUMN IF NOT EXISTS ${queryData.sqlColumnSchemas.join(", ADD COLUMN IF NOT EXISTS ")}`
+            let createQuery = `CREATE TABLE IF NOT EXISTS ${component}(id serial PRIMARY KEY, ${queryData.sqlColumnSchemas.join(",")})`
+            let createHistoryQuery = `CREATE TABLE IF NOT EXISTS ${component}_history(id serial PRIMARY KEY, foreignKey integer REFERENCES ${component} (id) ON DELETE CASCADE, patches json)`
 
-            var insertQuery = `INSERT INTO ${component}(${queryData.sqlColumnNames.join(",")}) values(${queryData.sqlColumnIndexes.join(",")}) RETURNING *`
-            var insertHistoryQuery = `INSERT INTO ${component}_history(foreignKey, patches) values($1, CAST ($2 AS JSON)) RETURNING *`
+            let ensureAllColumnsExistQuery = `ALTER TABLE ${component} ADD COLUMN IF NOT EXISTS ${queryData.sqlColumnSchemas.join(", ADD COLUMN IF NOT EXISTS ")}`
+
+            let insertQuery = `INSERT INTO ${component}(${queryData.sqlColumnNames.join(",")}) values(${queryData.sqlColumnIndexes.join(",")}) RETURNING *`
+            let insertHistoryQuery = `INSERT INTO ${component}_history(foreignKey, patches) values($1, CAST ($2 AS JSON)) RETURNING *`
             try {
                 await this.db.query(createQuery)
                 await this.db.query(createHistoryQuery)
@@ -180,49 +189,92 @@ export function createServer(schemaOverride: object = undefined) {
                 let resultString = JSON.stringify(result[0])
                 const dmp = new DiffMatchPatch.diff_match_patch()
                 let diff = dmp.patch_make(resultString, "")
-                var diffValues = [result[0].id, JSON.stringify([dmp.patch_toText(diff)])]
+                let diffValues = [result[0].id, JSON.stringify([dmp.patch_toText(diff)])]
                 let historyResult = await this.db.query(insertHistoryQuery, diffValues)
                 return result;
-            } catch (err){
+            } catch (err) {
                 console.log(err)
                 return []
             }
         }
-    
-        public async getAll(component: string){
-            var getQuery = `SELECT * FROM ${component}`
+        public async getAll(component: string, filter: any, groupBy: any) {
+            let getQuery = `SELECT * FROM ${component} ORDER BY id`
             try {
                 let response = await this.db.query(getQuery)
+                if (filter) {
+                    try {
+                        filter = JSON.parse(filter)
+                        response = response.filter(entry => {
+                            let matchedFilters = 0
+                            let filterCount = Object.keys(filter).length
+                            for (let key in filter) {
+                                let nestedKeyArray = key.split(".")
+                                let entryValue = get(nestedKeyArray, entry)
+                                if (entryValue) {
+                                    let filterArray: Array<any>
+                                    if (filter[key] instanceof Array) {
+                                        filterArray = filter[key] as Array<any>
+                                    }
+                                    else {
+                                        filterArray = [filter[key]]
+                                    }
+
+                                    if (filterArray.find(x => JSON.stringify(x) === JSON.stringify(entryValue))) {
+                                        matchedFilters++
+                                    }
+                                }
+                            }
+
+                            return (matchedFilters === filterCount)
+                        })
+                    }
+                    catch (err) {
+                        console.error(err)
+                        console.error("Failed to apply filter: ")
+                        console.error(filter)
+                    }
+                }
+
+                if (groupBy && typeof groupBy === "string") {
+                    response = response.reduce((grouped, item) => {
+                        let key = get(groupBy.split("."), item)
+                        grouped[key] = grouped[key] || [];
+                        grouped[key].push(item);
+                        return grouped;
+                    }, {});
+                }
+
                 return response;
-            } catch (err){
+
+            } catch (err) {
                 console.error(err)
                 return []
             }
         }
-    
-        public async getSingle(component: string, id:string){
-            var getQuery = `SELECT * FROM ${component} WHERE id=$1`
+
+        public async getSingle(component: string, id: string) {
+            let getQuery = `SELECT * FROM ${component} WHERE id=$1 ORDER BY id`
             try {
                 let response = await this.db.query(getQuery, id)
                 return response;
-            } catch (err){
+            } catch (err) {
                 console.error(err)
                 return []
             }
         }
-    
-        public async getSingleHistory(component: string, id:string){ 
+
+        public async getSingleHistory(component: string, id: string) {
             try {
                 let rawHistory = await this.getSingleHistoryRaw(component, id)
                 rawHistory = rawHistory[0]
                 let currentVersion = await this.getSingle(component, id)
                 currentVersion = JSON.stringify(currentVersion[0])
                 const dmp = new DiffMatchPatch.diff_match_patch()
-                var oldVersions = []
+                let oldVersions = []
                 oldVersions.push(JSON.parse(currentVersion))
                 // ignore original empty object hence >= 1
-                for (var i = rawHistory.patches.length-1; i >= 1; i--) {
-                    currentVersion = dmp.patch_apply(dmp.patch_fromText(rawHistory.patches[i]),currentVersion)[0]
+                for (let i = rawHistory.patches.length - 1; i >= 1; i--) {
+                    currentVersion = dmp.patch_apply(dmp.patch_fromText(rawHistory.patches[i]), currentVersion)[0]
                     oldVersions.push(JSON.parse(currentVersion))
                 }
 
@@ -233,9 +285,9 @@ export function createServer(schemaOverride: object = undefined) {
             }
         }
 
-        public async getAllHistory(component: string) {
+        public async getAllHistory(component: string, filter: any, groupBy: any) {
             try {
-                let allRows = await this.getAll(component)
+                let allRows = await this.getAll(component, filter, groupBy)
                 let allHistory = []
                 for (let entry of allRows) {
                     // TODO speed this up by hitting the db only once
@@ -253,13 +305,13 @@ export function createServer(schemaOverride: object = undefined) {
                 return []
             }
         }
-    
-        public async updateSingle(component: string, id: string, data: JSON, schema: object){
+
+        public async updateSingle(component: string, id: string, data: JSON, schema: object) {
             let queryData = this.formatQueryData(data, schema)
 
-            var updateQuery = `UPDATE ${component} SET (${queryData.sqlColumnNames.join(",")}) = (${queryData.sqlColumnIndexes.join(",")}) WHERE id = ${id} RETURNING *`
-            var updateHistoryQuery = `UPDATE ${component}_history SET patches = $1 WHERE foreignKey = ${id} RETURNING *`
-            var ensureAllColumnsExistQuery = `ALTER TABLE ${component} ADD COLUMN IF NOT EXISTS ${queryData.sqlColumnSchemas.join(", ADD COLUMN IF NOT EXISTS ")}`
+            let updateQuery = `UPDATE ${component} SET (${queryData.sqlColumnNames.join(",")}) = (${queryData.sqlColumnIndexes.join(",")}) WHERE id = ${id} RETURNING *`
+            let updateHistoryQuery = `UPDATE ${component}_history SET patches = $1 WHERE foreignKey = ${id} RETURNING *`
+            let ensureAllColumnsExistQuery = `ALTER TABLE ${component} ADD COLUMN IF NOT EXISTS ${queryData.sqlColumnSchemas.join(", ADD COLUMN IF NOT EXISTS ")}`
             try {
                 let oldVersion = await this.getSingle(component, id)
                 let oldHistory = await this.getSingleHistoryRaw(component, id)
@@ -270,40 +322,51 @@ export function createServer(schemaOverride: object = undefined) {
                 oldHistory[0].patches.push(dmp.patch_toText(diff))
                 let historyResult = await this.db.query(updateHistoryQuery, JSON.stringify(oldHistory[0].patches))
                 return result;
-            } catch (err){
-                console.error(err)
-                return []
-            }
-        }
-    
-        public async deleteSingle(component: string, id: string){
-            var deleteQuery = `DELETE FROM ${component} WHERE id=$1`
-            try {
-                let response = await this.db.query(deleteQuery, id)
-                return response;
-            } catch (err){
-                console.error(err)
-                return []
-            }
-        }
-    
-        public async deleteAll(component: string){
-            var deleteAllQuery = `DROP TABLE IF EXISTS ${component}, ${component}_history`
-            try {
-                let response = await this.db.query(deleteAllQuery)
-                return response;
-            } catch (err){
+            } catch (err) {
                 console.error(err)
                 return []
             }
         }
 
-        private async getSingleHistoryRaw(component: string, id: string){
-            var getQuery = `SELECT * FROM ${component}_history WHERE foreignKey=$1`
+        public async deleteSingle(component: string, id: string) {
+            let deleteQuery = `DELETE FROM ${component} WHERE id=$1`
+            try {
+                let response = await this.db.query(deleteQuery, id)
+                return response;
+            } catch (err) {
+                console.error(err)
+                return []
+            }
+        }
+
+        public async deleteAll(component: string) {
+            let deleteQuery = `TRUNCATE ${component} RESTART IDENTITY CASCADE`
+            try {
+                let response = await this.db.query(deleteQuery)
+                return response;
+            } catch (err) {
+                console.error(err)
+                return []
+            }
+        }
+
+        public async dropTable(component: string) {
+            let deleteAllQuery = `DROP TABLE IF EXISTS ${component}, ${component}_history`
+            try {
+                let response = await this.db.query(deleteAllQuery)
+                return response;
+            } catch (err) {
+                console.error(err)
+                return []
+            }
+        }
+
+        private async getSingleHistoryRaw(component: string, id: string) {
+            let getQuery = `SELECT * FROM ${component}_history WHERE foreignKey=$1`
             try {
                 let response = await this.db.query(getQuery, id)
                 return response;
-            } catch (err){
+            } catch (err) {
                 return err;
             }
         }
@@ -340,9 +403,8 @@ export function createServer(schemaOverride: object = undefined) {
 
         let componentSchema = await db.getComponentSchema(`${req.params.component}/${req.params.subcomponent}`)
         // sanity check json body
-        if (componentSchema.validator(req.body) === false){
-            res.statusCode = 400
-            res.send(componentSchema.validator.errors)
+        if (componentSchema.validator(req.body) === false) {
+            res.status(400).send(componentSchema.validator.errors)
             return;
         }
 
@@ -356,9 +418,8 @@ export function createServer(schemaOverride: object = undefined) {
 
         let componentSchema = await db.getComponentSchema(req.params.component)
         // sanity check json body
-        if (componentSchema.validator(req.body) === false){
-            res.statusCode = 400
-            res.send(componentSchema.validator.errors)
+        if (componentSchema.validator(req.body) === false) {
+            res.status(400).send(componentSchema.validator.errors)
             return;
         }
 
@@ -369,30 +430,10 @@ export function createServer(schemaOverride: object = undefined) {
         // send response success or fail
     })
 
-    scribe.delete("/v0/:component/:subcomponent", parser.urlencoded({ extended: true }), (req, res, next) => {
-        // delete table if it exists
-        db.deleteAll(`${req.params.component}_${req.params.subcomponent}`).then(result => {
-            res.send(result)
-        })
-        // send response success or fail
-    })
-
-    scribe.delete("/v0/:component", parser.urlencoded({ extended: true }), (req, res, next) => {
-        // delete table if it exists
-        db.deleteAll(req.params.component).then(result => {
-            res.send(result)
-        })
-
-        if (req.query.recursive) {
-            // TODO find and delete all subcomponents
-        }
-
-        // send response success or fail
-    })
 
     scribe.get("/v0/:component/:subcomponent/all", parser.urlencoded({ extended: true }), (req, res, next) => {
         // get all
-        db.getAll(`${req.params.component}_${req.params.subcomponent}`).then(result => {
+        db.getAll(`${req.params.component}_${req.params.subcomponent}`, req.query.filter, req.query.groupBy).then(result => {
             res.send(result)
         })
         // fail if component doesn't exist
@@ -401,7 +442,7 @@ export function createServer(schemaOverride: object = undefined) {
 
     scribe.get("/v0/:component/all", parser.urlencoded({ extended: true }), (req, res, next) => {
         // get all
-        db.getAll(req.params.component).then(result => {
+        db.getAll(req.params.component, req.query.filter, req.query.groupBy).then(result => {
             res.send(result)
         })
         // fail if component doesn't exist
@@ -410,7 +451,7 @@ export function createServer(schemaOverride: object = undefined) {
 
     scribe.get("/v0/:component/:subcomponent/all/history", parser.urlencoded({ extended: true }), (req, res, next) => {
         // get all
-        db.getAllHistory(`${req.params.component}_${req.params.subcomponent}`).then(result => {
+        db.getAllHistory(`${req.params.component}_${req.params.subcomponent}`, req.query.filter, req.query.groupBy).then(result => {
             res.send(result)
         })
         // fail if component doesn't exist
@@ -419,7 +460,7 @@ export function createServer(schemaOverride: object = undefined) {
 
     scribe.get("/v0/:component/all/history", parser.urlencoded({ extended: true }), (req, res, next) => {
         // get all
-        db.getAllHistory(req.params.component).then(result => {
+        db.getAllHistory(req.params.component, req.query.filter, req.query.groupBy).then(result => {
             res.send(result)
         })
         // fail if component doesn't exist
@@ -466,9 +507,8 @@ export function createServer(schemaOverride: object = undefined) {
         // sanity check json body
         let componentSchema = await db.getComponentSchema(`${req.params.component}/${req.params.subcomponent}`)
         // sanity check json body
-        if (componentSchema.validator(req.body) === false){
-            res.statusCode = 400
-            res.send(componentSchema.validator.errors)
+        if (componentSchema.validator(req.body) === false) {
+            res.status(400).send(componentSchema.validator.errors)
             return;
         }
 
@@ -477,19 +517,33 @@ export function createServer(schemaOverride: object = undefined) {
             res.send(result)
         })
     })
-    
+
     scribe.put("/v0/:component/:id", parser.json(), async (req, res, next) => {
         // sanity check json body
         let componentSchema = await db.getComponentSchema(req.params.component)
         // sanity check json body
-        if (componentSchema.validator(req.body) === false){
-            res.statusCode = 400
-            res.send(componentSchema.validator.errors)
+        if (componentSchema.validator(req.body) === false) {
+            res.status(400).send(componentSchema.validator.errors)
             return;
         }
 
         // update id if it exists
         db.updateSingle(req.params.component, req.params.id, req.body, componentSchema.schema).then(result => {
+            res.send(result)
+        })
+    })
+    scribe.delete("/v0/:component/:subcomponent/all", parser.urlencoded({ extended: true }), (req, res, next) => {
+        // delete id if it exists
+        // fail if it doesn't exist
+        db.deleteAll(`${req.params.component}_${req.params.subcomponent}`).then(result => {
+            res.send(result)
+        })
+    })
+
+    scribe.delete("/v0/:component/all", parser.urlencoded({ extended: true }), (req, res, next) => {
+        // delete id if it exists
+        // fail if it doesn't exist
+        db.deleteAll(req.params.component).then(result => {
             res.send(result)
         })
     })
@@ -510,9 +564,39 @@ export function createServer(schemaOverride: object = undefined) {
         })
     })
 
+    scribe.delete("/v0/:component/:subcomponent", parser.urlencoded({ extended: true }), (req, res, next) => {
+        // let :id route fall through
+        if (parseInt(req.params.subcomponent) !== NaN) {
+            next()
+            return
+        }
+        // delete table if it exists
+        db.dropTable(`${req.params.component}_${req.params.subcomponent}`).then(result => {
+            res.send(result)
+        })
+        // send response success or fail
+    })
+
+    scribe.delete("/v0/:component", parser.urlencoded({ extended: true }), (req, res, next) => {
+        // delete table if it exists
+        db.dropTable(req.params.component).then(result => {
+            res.send(result)
+        })
+
+        if (req.query.recursive) {
+            // TODO find and delete all subcomponents
+        }
+
+        // send response success or fail
+    })
+
     scribe.get("/v0", parser.urlencoded({ extended: true }), (req, res, next) => {
         res.statusCode = 200
         res.send()
+    })
+
+    scribe.all("*", (req, res, next) => {
+        res.status(400).send("Unhandled Route")
     })
 
    return scribe.listen(argv.port, () => {
