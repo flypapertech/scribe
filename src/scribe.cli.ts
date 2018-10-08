@@ -201,15 +201,19 @@ export function createServer(schemaOverride: object = undefined) {
             let getQuery = `SELECT * FROM ${component} ORDER BY id`
             try {
                 let response = await this.db.query(getQuery)
-                if (filter) {
+                let filteredResponse = []
+                if (!filter) {
+                    filteredResponse = response
+                }
+                else {
                     try {
                         filter = JSON.parse(filter)
-                        response = response.filter(entry => {
+                        for (let i = 0; i < response.length; i++) {
                             let matchedFilters = 0
                             let filterCount = Object.keys(filter).length
                             for (let key in filter) {
                                 let nestedKeyArray = key.split(".")
-                                let entryValue = get(nestedKeyArray, entry)
+                                let entryValue = get(nestedKeyArray, response[i])
                                 if (entryValue) {
                                     let filterArray: Array<any>
                                     if (filter[key] instanceof Array) {
@@ -225,8 +229,10 @@ export function createServer(schemaOverride: object = undefined) {
                                 }
                             }
 
-                            return (matchedFilters === filterCount)
-                        })
+                            if (matchedFilters === filterCount) {
+                                filteredResponse.push(response[i])
+                            }
+                        }
                     }
                     catch (err) {
                         console.error(err)
@@ -236,7 +242,7 @@ export function createServer(schemaOverride: object = undefined) {
                 }
 
                 if (groupBy && typeof groupBy === "string") {
-                    response = response.reduce((grouped, item) => {
+                    filteredResponse = filteredResponse.reduce((grouped, item) => {
                         let key = get(groupBy.split("."), item)
                         grouped[key] = grouped[key] || [];
                         grouped[key].push(item);
@@ -244,7 +250,7 @@ export function createServer(schemaOverride: object = undefined) {
                     }, {});
                 }
 
-                return response;
+                return filteredResponse;
 
             } catch (err) {
                 console.error(err)
