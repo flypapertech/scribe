@@ -1,5 +1,5 @@
 {
-  "name": "scribe",
+  "name": "@flypapertech/scribe",
   "version": "0.0.0",
   "description": "Database modeling services.",
   "main": "./dist/scribe.cli.js",
