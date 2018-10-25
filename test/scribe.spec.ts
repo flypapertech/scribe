@@ -1,5 +1,5 @@
 process.env.SCRIBE_APP_DB_NAME = "test"
-process.env.SCRIBE_APP_DB_USER = "postgres"
+process.env.SCRIBE_APP_DB_USER = "travis"
 process.env.SCRIBE_APP_DB_PORT = "5433"
 import {createServer} from "../src/scribe.cli"
 import * as mocha from "mocha"
