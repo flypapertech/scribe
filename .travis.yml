@@ -1,12 +1,12 @@
 language: node_js
 install:
-- yarn install
+  - yarn install
 script:
-- yarn test
+  - yarn test
 node_js:
-- '8.0'
-- '9.0'
-- '10.0'
+  - '8.0'
+  - '9.0'
+  - '10.0'
 addons:
   postgresql: "10"
   apt:
@@ -16,8 +16,12 @@ addons:
 env:
   global:
   - PGPORT=5433
+before_install:
+  - sudo sed -i -e '/local.*peer/s/postgres/all/' -e 's/peer\|md5/trust/g' /etc/postgresql/*/main/pg_hba.conf
+  - sudo service postgresql restart
+  - sleep 1
 before_script:
-- psql -c 'create database test;' -U travis
+  - psql -c 'create database test;' -U postgres
 deploy:
   provider: npm
   email: npm@flypaper.com
