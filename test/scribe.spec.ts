@@ -1,17 +1,16 @@
 process.env.SCRIBE_APP_DB_NAME = "test"
-process.env.SCRIBE_APP_DB_USER = "postgres"
-process.env.SCRIBE_APP_DB_PORT = "5433"
 import {createServer} from "../src/scribe.cli"
 import * as mocha from "mocha"
 import * as chai from "chai"
-import * as chaiHttp from "chai-http"
-let expect = chai.expect()
-let should = chai.should()
+import {expect} from "chai"
+import chaiHttp = require("chai-http")
+chai.use(chaiHttp)
+const should = require("should")
+
 let baseEndPoint = "http://localhost:1337"
 let server;
 
 const schema = require(__dirname + "/../src/default.table.schema.json")
-chai.use(chaiHttp)
 
 mocha.before(function(done) {
     server = createServer(schema)
@@ -27,7 +26,7 @@ mocha.describe("scribe", function() {
         chai.request(baseEndPoint)
             .get("/")
             .end((err, res) => {
-                res.should.have.status(200)
+                res.status.should.be.equal(200)
                 done()
             })
     })
@@ -36,7 +35,7 @@ mocha.describe("scribe", function() {
         chai.request(baseEndPoint)
             .del("/testComponent")
             .end((err, res) => {
-                res.should.have.status(200)
+                res.status.should.be.equal(200)
                 expect(res.body).to.eql([])
                 done()
             })
@@ -91,7 +90,7 @@ mocha.describe("scribe", function() {
         chai.request(baseEndPoint)
             .get("/testComponent/all")
             .end((err, res) => {
-                res.should.have.status(200)
+                res.status.should.be.equal(200)
                 expect(res.body).to.eql(expectedResponse)
                 done()
             })
