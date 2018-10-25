@@ -1,0 +1,15 @@
+language: node_js
+install:
+- yarn install
+- yarn test
+node_js:
+- '9.0'
+- '10.0'
+deploy:
+  provider: npm
+  email: npm@flypaper.com
+  api_key:
+    secure: A8TO2vnhyJgEoOQ0s/9UnAIxV7bcDvPIOYwaJ5PSW1CQw0XorXMYJI2UO3ufuBgWfppQwV0gBcl4Mf5HNjWvDIu1jcElFHpFD/WJ+ffEceCpZWXwzFUkpLD2sRQgjwA5ys7SNNQX4n1u39EJ5eG/y2+vnvtWL8NikVQotKkctBiyKAHFN90UTBd5ZqpqnbA5Pwm3mrHKB7dCk7KV8h2A3zOaGDxCsPHZMD/VaCvg+ka4oH8VtD7GQCOFHky0xIHLgO2pjjym8J5HAxThaEaih6KkvlDWXpkBLqjtdcPGgcR1EWFwF0aYt4giVdujz+JshX1REqkcK9F/C3vNDfOBSOC953x//lPUo8/7Kp/AgZI8Fy+/k83NwQrjX/fNbuihbI874NRSAkK/KS8lXH4Co1AsP7y+tibkaFjyErIDVFzPrT3gX8VhC+nlO6HTRrteWDqRxwxciYsOjHpyNuvXYvwCNIz0FyWPiieOyeyI3BxKVpkJsyG2jAcVuBZ5whxRzGPZk3jtC6KyAEL/clqJIIyWjXdGHvMHMBwfp2BbkzjTqAdjcJhAl93zDFcG9xGuTO7nK+YHNOTARng8B2wEl/D57m8PHU3ebNKkd/gXsttv20V00gGqR5CZ378TOhrEaLYUMe8m+EySGQreRSEjifJyFKg02BF+UjlpdsA3s3E=
+  on:
+    tags: true
+    repo: flypapertech/scribe
