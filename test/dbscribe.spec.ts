@@ -1,5 +1,5 @@
-process.env.DBSCRIBE_APP_DB_NAME = "test"
-import {createServer} from "../src/dbscribe.cli"
+process.env.SCRIBE_APP_DB_NAME = "test"
+import {createServer} from "../src/scribe.cli"
 import * as mocha from "mocha"
 import * as chai from "chai"
 import * as chaiHttp from "chai-http"
@@ -19,7 +19,7 @@ mocha.after(function(done) {
     done()
 })
 
-mocha.describe("dbscribe", function() {
+mocha.describe("scribe", function() {
     mocha.it("Checks that server is running", function(done) {
         chai.request(baseEndPoint)
             .get("/")

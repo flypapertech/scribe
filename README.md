@@ -1,4 +1,4 @@
-# dbscribe
+# scribe
 Database modeling services.
 
 Notes:
