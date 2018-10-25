@@ -71,7 +71,7 @@ mocha.describe("scribe", function() {
             .post("/testComponent")
             .send(request)
             .end((err, res) => {
-                expect(res.body).to.eql(expectedResponse)
+                res.body.should.be.eql(expectedResponse)
                 done()
             })
     })
