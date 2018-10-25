@@ -5,7 +5,7 @@ import {createServer} from "../src/scribe.cli"
 import * as mocha from "mocha"
 import * as chai from "chai"
 import * as chaiHttp from "chai-http"
-let should = chai.should()
+let expect = chai.expect()
 let baseEndPoint = "http://localhost:1337"
 let server;
 
@@ -36,7 +36,7 @@ mocha.describe("scribe", function() {
             .del("/testComponent")
             .end((err, res) => {
                 res.should.have.status(200)
-                res.body.should.be.eql([])
+                expect(res.body).to.eql([])
                 done()
             })
     })
@@ -69,7 +69,7 @@ mocha.describe("scribe", function() {
             .post("/testComponent")
             .send(request)
             .end((err, res) => {
-                res.body.should.be.eql(expectedResponse)
+                expect(res.body).to.eql(expectedResponse)
                 done()
             })
     })
@@ -91,7 +91,7 @@ mocha.describe("scribe", function() {
             .get("/testComponent/all")
             .end((err, res) => {
                 res.should.have.status(200)
-                res.body.should.be.eql(expectedResponse)
+                expect(res.body).to.eql(expectedResponse)
                 done()
             })
     })
@@ -126,7 +126,7 @@ mocha.describe("scribe", function() {
             .put("/testComponent/1")
             .send(request)
             .end((err, res) => {
-                res.body.should.be.eql(expectedResponse)
+                expect(res.body).to.eql(expectedResponse)
                 done()
         })
     })
@@ -164,7 +164,7 @@ mocha.describe("scribe", function() {
         chai.request(baseEndPoint)
             .get("/testComponent/all/history")
             .end((err, res) => {
-                res.body.should.be.eql(expectedResponse)
+                expect(res.body).to.eql(expectedResponse)
                 done()
         })
     })
@@ -206,7 +206,7 @@ mocha.describe("scribe", function() {
             .put("/testComponent/1")
             .send(request)
             .end((err, res) => {
-                res.body.should.be.eql(expectedResponse)
+                expect(res.body).to.eql(expectedResponse)
                 done()
         })
     })
