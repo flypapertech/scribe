@@ -1,26 +1,26 @@
 {
-  "name": "scribe",
+  "name": "dbscribe",
   "version": "0.0.0",
   "description": "Database modeling services.",
-  "main": "./dist/scribe.cli.js",
+  "main": "./dist/dbscribe.cli.js",
   "bin": {
-    "scribe": "./dist/scribe.cli.js"
+    "dbscribe": "./dist/dbscribe.cli.js"
   },
   "scripts": {
-    "build": "node_modules/.bin/tsc --outDir ./dist ./src/scribe.cli.ts --target es6 --module commonjs; node_modules/.bin/uglifyjs ./dist/scribe.cli.js -b -o ./dist/scribe.cli.js ; node_modules/.bin/uglifyjs ./dist/scribe.cli.js -o ./dist/scribe.cli.js; cp ./src/default.table.schema.json ./dist/default.table.schema.json",
+    "build": "yarn test && node_modules/.bin/tsc --outDir ./dist ./src/dbscribe.cli.ts --target es6 --module commonjs; node_modules/.bin/uglifyjs ./dist/dbscribe.cli.js -b -o ./dist/dbscribe.cli.js ; node_modules/.bin/uglifyjs ./dist/dbscribe.cli.js -o ./dist/dbscribe.cli.js; cp ./src/default.table.schema.json ./dist/default.table.schema.json",
     "test": "node_modules/.bin/mocha --exit --require ts-node/register test/**/*.spec.ts",
-    "start": "yarn build && node_modules/.bin/ts-node src/scribe.cli.ts"
+    "start": "yarn build && node_modules/.bin/ts-node src/dbscribe.cli.ts"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/flypapertech/scribe.git"
+    "url": "git+https://github.com/flypapertech/dbscribe.git"
   },
   "author": "",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/flypapertech/scribe/issues"
+    "url": "https://github.com/flypapertech/dbscribe/issues"
   },
-  "homepage": "https://github.com/flypapertech/scribe#readme",
+  "homepage": "https://github.com/flypapertech/dbscribe#readme",
   "dependencies": {
     "ajv": "^6.5.1",
     "axios": "^0.18.0",

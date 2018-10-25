@@ -13,16 +13,16 @@ import Axios from "axios";
 
 const argv = yargs.argv
 
-argv.name = argv.name || process.env.SCRIBE_APP_NAME || process.env.HOSTNAME || "localhost"
-argv.home = argv.home || process.env.SCRIBE_APP_HOME || process.cwd()
-argv.port = argv.port || process.env.SCRIBE_APP_PORT || process.env.PORT || 1337
-argv.mode = argv.mode || process.env.SCRIBE_APP_MODE || process.env.NODE_MODE || "development"
-argv.dbHost = argv.dbHost || process.env.SCRIBE_APP_DB_HOST || "localhost"
-argv.dbPass = argv.dbPass || process.env.SCRIBE_APP_DB_PASS || ""
-argv.dbUser = argv.dbUser || process.env.SCRIBE_APP_DB_USER || ""
-argv.dbPort = argv.dbPort || process.env.SCRIBE_APP_DB_PORT || 5432
-argv.dbName = argv.dbName || process.env.SCRIBE_APP_DB_NAME || "scribe"
-argv.appSchemaBaseUrl = argv.appSchemaBaseUrl || process.env.SCRIBE_APP_SCHEMA_BASE_URL || "http://localhost:8080/"
+argv.name = argv.name || process.env.DBSCRIBE_APP_NAME || process.env.HOSTNAME || "localhost"
+argv.home = argv.home || process.env.DBSCRIBE_APP_HOME || process.cwd()
+argv.port = argv.port || process.env.DBSCRIBE_APP_PORT || process.env.PORT || 1337
+argv.mode = argv.mode || process.env.DBSCRIBE_APP_MODE || process.env.NODE_MODE || "development"
+argv.dbHost = argv.dbHost || process.env.DBSCRIBE_APP_DB_HOST || "localhost"
+argv.dbPass = argv.dbPass || process.env.DBSCRIBE_APP_DB_PASS || ""
+argv.dbUser = argv.dbUser || process.env.DBSCRIBE_APP_DB_USER || ""
+argv.dbPort = argv.dbPort || process.env.DBSCRIBE_APP_DB_PORT || 5432
+argv.dbName = argv.dbName || process.env.DBSCRIBE_APP_DB_NAME || "dbscribe"
+argv.appSchemaBaseUrl = argv.appSchemaBaseUrl || process.env.DBSCRIBE_APP_SCHEMA_BASE_URL || "http://localhost:8080/"
 
 const dbCreateConfig = {
     user: argv.dbUser,
@@ -98,7 +98,7 @@ export function createServer(schemaOverride: object = undefined) {
                 return defaultSchema
             }
 
-            // TODO should this fall back or error? If scribe can't contact the server then should we be allowing random data in?
+            // TODO should this fall back or error? If dbscribe can't contact the server then should we be allowing random data in?
             try {
                 let response = await Axios.get(`${argv.appSchemaBaseUrl}${component}/schema`)
 
@@ -378,14 +378,14 @@ export function createServer(schemaOverride: object = undefined) {
         }
     }
 
-    const scribe = express()
-    scribe.locals.argv = argv
+    const dbscribe = express()
+    dbscribe.locals.argv = argv
     if (argv.mode === "production") {
 
         mkdirp.sync(argv.home + "/cache/")
         mkdirp.sync(argv.home + "/logs/")
 
-        scribe.use(require("express-bunyan-logger")({
+        dbscribe.use(require("express-bunyan-logger")({
             name: argv.name,
             streams: [
                 {
@@ -405,7 +405,7 @@ export function createServer(schemaOverride: object = undefined) {
 
     let db = new DB(postgresDb)
 
-    scribe.post("/:component/:subcomponent", parser.json(), async (req, res, next) => {
+    dbscribe.post("/:component/:subcomponent", parser.json(), async (req, res, next) => {
 
         let componentSchema = await db.getComponentSchema(`${req.params.component}/${req.params.subcomponent}`)
         // sanity check json body
@@ -420,7 +420,7 @@ export function createServer(schemaOverride: object = undefined) {
         // send response success or fail
     })
 
-    scribe.post("/:component", parser.json(), async (req, res, next) => {
+    dbscribe.post("/:component", parser.json(), async (req, res, next) => {
 
         let componentSchema = await db.getComponentSchema(req.params.component)
         // sanity check json body
@@ -437,7 +437,7 @@ export function createServer(schemaOverride: object = undefined) {
     })
 
 
-    scribe.get("/:component/:subcomponent/all", parser.urlencoded({ extended: true }), (req, res, next) => {
+    dbscribe.get("/:component/:subcomponent/all", parser.urlencoded({ extended: true }), (req, res, next) => {
         // get all
         db.getAll(`${req.params.component}_${req.params.subcomponent}`, req.query.filter, req.query.groupBy).then(result => {
             res.send(result)
@@ -446,7 +446,7 @@ export function createServer(schemaOverride: object = undefined) {
         // returns array always
     })
 
-    scribe.get("/:component/all", parser.urlencoded({ extended: true }), (req, res, next) => {
+    dbscribe.get("/:component/all", parser.urlencoded({ extended: true }), (req, res, next) => {
         // get all
         db.getAll(req.params.component, req.query.filter, req.query.groupBy).then(result => {
             res.send(result)
@@ -455,7 +455,7 @@ export function createServer(schemaOverride: object = undefined) {
         // returns array always
     })
 
-    scribe.get("/:component/:subcomponent/all/history", parser.urlencoded({ extended: true }), (req, res, next) => {
+    dbscribe.get("/:component/:subcomponent/all/history", parser.urlencoded({ extended: true }), (req, res, next) => {
         // get all
         db.getAllHistory(`${req.params.component}_${req.params.subcomponent}`, req.query.filter, req.query.groupBy).then(result => {
             res.send(result)
@@ -464,7 +464,7 @@ export function createServer(schemaOverride: object = undefined) {
         // returns array always
     })
 
-    scribe.get("/:component/all/history", parser.urlencoded({ extended: true }), (req, res, next) => {
+    dbscribe.get("/:component/all/history", parser.urlencoded({ extended: true }), (req, res, next) => {
         // get all
         db.getAllHistory(req.params.component, req.query.filter, req.query.groupBy).then(result => {
             res.send(result)
@@ -473,7 +473,7 @@ export function createServer(schemaOverride: object = undefined) {
         // returns array always
     })
 
-    scribe.get("/:component/:subcomponent/:id", parser.urlencoded({ extended: true }), (req, res, next) => {
+    dbscribe.get("/:component/:subcomponent/:id", parser.urlencoded({ extended: true }), (req, res, next) => {
         // get id
         db.getSingle(`${req.params.component}_${req.params.subcomponent}`, req.params.id).then(result => {
             res.send(result)
@@ -482,7 +482,7 @@ export function createServer(schemaOverride: object = undefined) {
         // returns array always
     })
 
-    scribe.get("/:component/:id", parser.urlencoded({ extended: true }), (req, res, next) => {
+    dbscribe.get("/:component/:id", parser.urlencoded({ extended: true }), (req, res, next) => {
         // get id
         db.getSingle(req.params.component, req.params.id).then(result => {
             res.send(result)
@@ -491,7 +491,7 @@ export function createServer(schemaOverride: object = undefined) {
         // returns array always
     })
 
-    scribe.get("/:component/:subcomponent/:id/history", parser.urlencoded({ extended: true }), (req, res, next) => {
+    dbscribe.get("/:component/:subcomponent/:id/history", parser.urlencoded({ extended: true }), (req, res, next) => {
         // get history of id
         db.getSingleHistory(`${req.params.component}_${req.params.subcomponent}`, req.params.id).then(result => {
             res.send(result)
@@ -500,7 +500,7 @@ export function createServer(schemaOverride: object = undefined) {
         // returns array always
     })
 
-    scribe.get("/:component/:id/history", parser.urlencoded({ extended: true }), (req, res, next) => {
+    dbscribe.get("/:component/:id/history", parser.urlencoded({ extended: true }), (req, res, next) => {
         // get history of id
         db.getSingleHistory(req.params.component, req.params.id).then(result => {
             res.send(result)
@@ -509,7 +509,7 @@ export function createServer(schemaOverride: object = undefined) {
         // returns array always
     })
 
-    scribe.put("/:component/:subcomponent/:id", parser.json(), async (req, res, next) => {
+    dbscribe.put("/:component/:subcomponent/:id", parser.json(), async (req, res, next) => {
         // sanity check json body
         let componentSchema = await db.getComponentSchema(`${req.params.component}/${req.params.subcomponent}`)
         // sanity check json body
@@ -524,7 +524,7 @@ export function createServer(schemaOverride: object = undefined) {
         })
     })
 
-    scribe.put("/:component/:id", parser.json(), async (req, res, next) => {
+    dbscribe.put("/:component/:id", parser.json(), async (req, res, next) => {
         // sanity check json body
         let componentSchema = await db.getComponentSchema(req.params.component)
         // sanity check json body
@@ -538,7 +538,7 @@ export function createServer(schemaOverride: object = undefined) {
             res.send(result)
         })
     })
-    scribe.delete("/:component/:subcomponent/all", parser.urlencoded({ extended: true }), (req, res, next) => {
+    dbscribe.delete("/:component/:subcomponent/all", parser.urlencoded({ extended: true }), (req, res, next) => {
         // delete id if it exists
         // fail if it doesn't exist
         db.deleteAll(`${req.params.component}_${req.params.subcomponent}`).then(result => {
@@ -546,7 +546,7 @@ export function createServer(schemaOverride: object = undefined) {
         })
     })
 
-    scribe.delete("/:component/all", parser.urlencoded({ extended: true }), (req, res, next) => {
+    dbscribe.delete("/:component/all", parser.urlencoded({ extended: true }), (req, res, next) => {
         // delete id if it exists
         // fail if it doesn't exist
         db.deleteAll(req.params.component).then(result => {
@@ -554,7 +554,7 @@ export function createServer(schemaOverride: object = undefined) {
         })
     })
 
-    scribe.delete("/:component/:subcomponent/:id", parser.urlencoded({ extended: true }), (req, res, next) => {
+    dbscribe.delete("/:component/:subcomponent/:id", parser.urlencoded({ extended: true }), (req, res, next) => {
         // delete id if it exists
         // fail if it doesn't exist
         db.deleteSingle(`${req.params.component}_${req.params.subcomponent}`, req.params.id).then(result => {
@@ -562,7 +562,7 @@ export function createServer(schemaOverride: object = undefined) {
         })
     })
 
-    scribe.delete("/:component/:id", parser.urlencoded({ extended: true }), (req, res, next) => {
+    dbscribe.delete("/:component/:id", parser.urlencoded({ extended: true }), (req, res, next) => {
         // delete id if it exists
         // fail if it doesn't exist
         db.deleteSingle(req.params.component, req.params.id).then(result => {
@@ -570,7 +570,7 @@ export function createServer(schemaOverride: object = undefined) {
         })
     })
 
-    scribe.delete("/:component/:subcomponent", parser.urlencoded({ extended: true }), (req, res, next) => {
+    dbscribe.delete("/:component/:subcomponent", parser.urlencoded({ extended: true }), (req, res, next) => {
         // let :id route fall through
         if (parseInt(req.params.subcomponent) !== NaN) {
             next()
@@ -583,7 +583,7 @@ export function createServer(schemaOverride: object = undefined) {
         // send response success or fail
     })
 
-    scribe.delete("/:component", parser.urlencoded({ extended: true }), (req, res, next) => {
+    dbscribe.delete("/:component", parser.urlencoded({ extended: true }), (req, res, next) => {
         // delete table if it exists
         db.dropTable(req.params.component).then(result => {
             res.send(result)
@@ -596,16 +596,16 @@ export function createServer(schemaOverride: object = undefined) {
         // send response success or fail
     })
 
-    scribe.get("/", parser.urlencoded({ extended: true }), (req, res, next) => {
+    dbscribe.get("/", parser.urlencoded({ extended: true }), (req, res, next) => {
         res.statusCode = 200
         res.send()
     })
 
-    scribe.all("*", (req, res, next) => {
+    dbscribe.all("*", (req, res, next) => {
         res.status(400).send("Unhandled Route")
     })
 
-   return scribe.listen(argv.port, () => {
+   return dbscribe.listen(argv.port, () => {
         console.log("Scribe - Process: %sd, Name: %s, Home: %s, Port: %d, Mode: %s, DB Name: %s",
             process.pid,
             argv.name,

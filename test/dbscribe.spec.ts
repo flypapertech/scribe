@@ -1,5 +1,5 @@
-process.env.SCRIBE_APP_DB_NAME = "test"
-import {createServer} from "../src/scribe.cli"
+process.env.DBSCRIBE_APP_DB_NAME = "test"
+import {createServer} from "../src/dbscribe.cli"
 import * as mocha from "mocha"
 import * as chai from "chai"
 import * as chaiHttp from "chai-http"
@@ -19,11 +19,11 @@ mocha.after(function(done) {
     done()
 })
 
-mocha.describe("scribe", function() {
+mocha.describe("dbscribe", function() {
     mocha.it("Checks that server is running", function(done) {
         chai.request(baseEndPoint)
-            .get("/v0")
-            .end((err,res) => {
+            .get("/")
+            .end((err, res) => {
                 res.should.have.status(200)
                 done()
             })
@@ -31,8 +31,8 @@ mocha.describe("scribe", function() {
 
     mocha.it("DEL component table", function(done) {
         chai.request(baseEndPoint)
-            .delete("/v0/testComponent")
-            .end((err,res) => {
+            .del("/testComponent")
+            .end((err, res) => {
                 res.should.have.status(200)
                 res.body.should.be.eql([])
                 done()
@@ -40,7 +40,7 @@ mocha.describe("scribe", function() {
     })
 
     mocha.it("POST to component", function(done) {
-        var request = {
+        let request = {
             "data": {
                 "something": "somethingstring"
             },
@@ -50,7 +50,7 @@ mocha.describe("scribe", function() {
             "modified_by": 2
         }
 
-        var expectedResponse = [
+        let expectedResponse = [
             {
                 "id": 1,
                 "data": {
@@ -64,7 +64,7 @@ mocha.describe("scribe", function() {
         ]
 
         chai.request(baseEndPoint)
-            .post("/v0/testComponent")
+            .post("/testComponent")
             .send(request)
             .end((err, res) => {
                 res.body.should.be.eql(expectedResponse)
@@ -73,7 +73,7 @@ mocha.describe("scribe", function() {
     })
 
     mocha.it("GET all entries", function(done) {
-        var expectedResponse = [
+        let expectedResponse = [
             {
                 "id": 1,
                 "data": {
@@ -86,16 +86,16 @@ mocha.describe("scribe", function() {
             }
         ]
         chai.request(baseEndPoint)
-            .get("/v0/testComponent/all")
-            .end((err,res) => {
+            .get("/testComponent/all")
+            .end((err, res) => {
                 res.should.have.status(200)
                 res.body.should.be.eql(expectedResponse)
                 done()
             })
     })
 
-    mocha.it("PUT entry", function(done){
-        var request = {
+    mocha.it("PUT entry", function(done) {
+        let request = {
             "data": {
                 "something": "we changed this",
                 "data2": "new thing"
@@ -106,7 +106,7 @@ mocha.describe("scribe", function() {
             "modified_by": 2
         }
 
-        var expectedResponse = [
+        let expectedResponse = [
             {
                 "id": 1,
                 "data": {
@@ -121,7 +121,7 @@ mocha.describe("scribe", function() {
         ]
 
         chai.request(baseEndPoint)
-            .put("/v0/testComponent/1")
+            .put("/testComponent/1")
             .send(request)
             .end((err, res) => {
                 res.body.should.be.eql(expectedResponse)
@@ -129,8 +129,8 @@ mocha.describe("scribe", function() {
         })
     })
 
-    mocha.it("GET all history", function(done){
-        var expectedResponse = [
+    mocha.it("GET all history", function(done) {
+        let expectedResponse = [
             {
                 "id": 1,
                 "history": [
@@ -160,23 +160,23 @@ mocha.describe("scribe", function() {
         ]
 
         chai.request(baseEndPoint)
-            .get("/v0/testComponent/all/history")
+            .get("/testComponent/all/history")
             .end((err, res) => {
                 res.body.should.be.eql(expectedResponse)
                 done()
         })
     })
 
-    mocha.it("PUT with schema change", function(done){
+    mocha.it("PUT with schema change", function(done) {
         server.close()
         let newSchema = schema
         newSchema.required.push("new_column")
-        newSchema.properties["new_column"]= {
+        newSchema.properties["new_column"] = {
             "type": "string"
         }
 
         server = createServer(newSchema)
-        var request = {
+        let request = {
             "data": {
                 "something": "somethingstring"
             },
@@ -186,7 +186,7 @@ mocha.describe("scribe", function() {
             "modified_by": 2,
             "new_column": "woot"
         }
-        var expectedResponse = [
+        let expectedResponse = [
             {
                 "id": 1,
                 "data": {
@@ -201,7 +201,7 @@ mocha.describe("scribe", function() {
         ]
 
         chai.request(baseEndPoint)
-            .put("/v0/testComponent/1")
+            .put("/testComponent/1")
             .send(request)
             .end((err, res) => {
                 res.body.should.be.eql(expectedResponse)
