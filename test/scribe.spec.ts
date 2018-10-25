@@ -6,6 +6,7 @@ import * as mocha from "mocha"
 import * as chai from "chai"
 import * as chaiHttp from "chai-http"
 let expect = chai.expect()
+let should = chai.should()
 let baseEndPoint = "http://localhost:1337"
 let server;
 
