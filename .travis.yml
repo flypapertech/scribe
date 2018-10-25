@@ -6,6 +6,8 @@ node_js:
 - '8.0'
 - '9.0'
 - '10.0'
+services:
+- postgresql
 deploy:
   provider: npm
   email: npm@flypaper.com
