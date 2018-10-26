@@ -6,6 +6,9 @@
   "bin": {
     "scribe": "./dist/scribe.cli.js"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "yarn test && node_modules/.bin/tsc --outDir ./dist ./src/scribe.cli.ts --target es6 --module commonjs; node_modules/.bin/uglifyjs ./dist/scribe.cli.js -b -o ./dist/scribe.cli.js ; node_modules/.bin/uglifyjs ./dist/scribe.cli.js -o ./dist/scribe.cli.js; cp ./src/default.table.schema.json ./dist/default.table.schema.json",
     "test": "node_modules/.bin/mocha --exit --require ts-node/register test/**/*.spec.ts",
