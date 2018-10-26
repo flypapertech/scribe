@@ -71,7 +71,9 @@ mocha.describe("scribe", function() {
             .post("/testComponent")
             .send(request)
             .end((err, res) => {
-                res.body.should.be.eql(expectedResponse)
+                if (JSON.stringify(res.body) !== JSON.stringify(expectedResponse)){
+                    chai.assert.fail()
+                }
                 done()
             })
     })
@@ -93,7 +95,9 @@ mocha.describe("scribe", function() {
             .get("/testComponent/all")
             .end((err, res) => {
                 res.status.should.be.equal(200)
-                expect(res.body).to.eql(expectedResponse)
+                if (JSON.stringify(res.body) !== JSON.stringify(expectedResponse)){
+                    chai.assert.fail()
+                }
                 done()
             })
     })
@@ -128,7 +132,9 @@ mocha.describe("scribe", function() {
             .put("/testComponent/1")
             .send(request)
             .end((err, res) => {
-                expect(res.body).to.eql(expectedResponse)
+                if (JSON.stringify(res.body) !== JSON.stringify(expectedResponse)){
+                    chai.assert.fail()
+                }
                 done()
         })
     })
@@ -166,7 +172,9 @@ mocha.describe("scribe", function() {
         chai.request(baseEndPoint)
             .get("/testComponent/all/history")
             .end((err, res) => {
-                expect(res.body).to.eql(expectedResponse)
+                if (JSON.stringify(res.body) !== JSON.stringify(expectedResponse)){
+                    chai.assert.fail()
+                }
                 done()
         })
     })
@@ -208,7 +216,9 @@ mocha.describe("scribe", function() {
             .put("/testComponent/1")
             .send(request)
             .end((err, res) => {
-                expect(res.body).to.eql(expectedResponse)
+                if (JSON.stringify(res.body) !== JSON.stringify(expectedResponse)){
+                    chai.assert.fail()
+                }
                 done()
         })
     })
