@@ -6,6 +6,7 @@ import * as mocha from "mocha"
 import * as chai from "chai"
 import {expect} from "chai"
 import chaiHttp = require("chai-http")
+import * as _ from "lodash"
 chai.use(chaiHttp)
 const should = require("should")
 
@@ -71,7 +72,7 @@ mocha.describe("scribe", function() {
             .post("/testComponent")
             .send(request)
             .end((err, res) => {
-                if (JSON.stringify(res.body) !== JSON.stringify(expectedResponse)){
+                if (_.isEqual(res.body, expectedResponse)) {
                     chai.assert.fail()
                 }
                 done()
@@ -95,7 +96,7 @@ mocha.describe("scribe", function() {
             .get("/testComponent/all")
             .end((err, res) => {
                 res.status.should.be.equal(200)
-                if (JSON.stringify(res.body) !== JSON.stringify(expectedResponse)){
+                if (_.isEqual(res.body, expectedResponse)) {
                     chai.assert.fail()
                 }
                 done()
@@ -132,7 +133,7 @@ mocha.describe("scribe", function() {
             .put("/testComponent/1")
             .send(request)
             .end((err, res) => {
-                if (JSON.stringify(res.body) !== JSON.stringify(expectedResponse)){
+                if (_.isEqual(res.body, expectedResponse)) {
                     chai.assert.fail()
                 }
                 done()
@@ -172,7 +173,7 @@ mocha.describe("scribe", function() {
         chai.request(baseEndPoint)
             .get("/testComponent/all/history")
             .end((err, res) => {
-                if (JSON.stringify(res.body) !== JSON.stringify(expectedResponse)){
+                if (_.isEqual(res.body, expectedResponse)) {
                     chai.assert.fail()
                 }
                 done()
@@ -216,7 +217,7 @@ mocha.describe("scribe", function() {
             .put("/testComponent/1")
             .send(request)
             .end((err, res) => {
-                if (JSON.stringify(res.body) !== JSON.stringify(expectedResponse)){
+                if (_.isEqual(res.body, expectedResponse)) {
                     chai.assert.fail()
                 }
                 done()
