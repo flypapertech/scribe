@@ -34,7 +34,7 @@
     "mkdirp": "^0.5.1",
     "pg-promise": "^8.4.4",
     "pgtools": "^0.3.0",
-    "yargs": "^11.0.0"
+    "yargs": "^12.0.2"
   },
   "devDependencies": {
     "@types/axios": "^0.14.0",
@@ -46,7 +46,7 @@
     "@types/mkdirp": "^0.5.2",
     "@types/node": "^10.3.4",
     "@types/request": "^2.47.1",
-    "@types/yargs": "^11.0.0",
+    "@types/yargs": "^12.0.1",
     "chai": "^4.1.2",
     "chai-http": "^4.0.0",
     "lodash": "^4.17.11",
