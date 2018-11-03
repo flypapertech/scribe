@@ -1,9 +1,9 @@
 process.env.SCRIBE_APP_DB_NAME = "test"
 process.env.SCRIBE_APP_DB_PORT = "5433"
 process.env.SCRIBE_APP_DB_USER = "postgres"
-import {createServer} from "../src/scribe.cli"
+import { createServer } from "../src/scribe.cli"
 import * as chai from "chai"
-import { expect } from "chai"
+import { expect, assert } from "chai"
 import chaiHttp = require("chai-http")
 import * as _ from "lodash"
 
@@ -30,7 +30,7 @@ mocha.describe("scribe", function() {
         chai.request(baseEndPoint)
             .get("/")
             .end((err, res) => {
-                res.status.should.be.equal(200)
+                assert.isTrue(_.isEqual(res.status, 200))
                 done()
             })
     })
@@ -39,7 +39,7 @@ mocha.describe("scribe", function() {
         chai.request(baseEndPoint)
             .del("/testComponent")
             .end((err, res) => {
-                res.status.should.be.equal(200)
+                assert.isTrue(_.isEqual(res.status, 200))
                 expect(res.body).to.eql([])
                 done()
             })
@@ -73,9 +73,7 @@ mocha.describe("scribe", function() {
             .post("/testComponent")
             .send(request)
             .end((err, res) => {
-                if (_.isEqual(res.body, expectedResponse)) {
-                    chai.assert.fail()
-                }
+                assert.isTrue(_.isEqual(res.body, expectedResponse))
                 done()
             })
     })
@@ -96,10 +94,7 @@ mocha.describe("scribe", function() {
         chai.request(baseEndPoint)
             .get("/testComponent/all")
             .end((err, res) => {
-                res.status.should.be.equal(200)
-                if (_.isEqual(res.body, expectedResponse)) {
-                    chai.assert.fail()
-                }
+                assert.isTrue(_.isEqual(res.body, expectedResponse))
                 done()
             })
     })
@@ -134,9 +129,7 @@ mocha.describe("scribe", function() {
             .put("/testComponent/1")
             .send(request)
             .end((err, res) => {
-                if (_.isEqual(res.body, expectedResponse)) {
-                    chai.assert.fail()
-                }
+                assert.isTrue(_.isEqual(res.body, expectedResponse))
                 done()
         })
     })
@@ -174,9 +167,7 @@ mocha.describe("scribe", function() {
         chai.request(baseEndPoint)
             .get("/testComponent/all/history")
             .end((err, res) => {
-                if (_.isEqual(res.body, expectedResponse)) {
-                    chai.assert.fail()
-                }
+                assert.isTrue(_.isEqual(res.body, expectedResponse))
                 done()
         })
     })
@@ -218,9 +209,7 @@ mocha.describe("scribe", function() {
             .put("/testComponent/1")
             .send(request)
             .end((err, res) => {
-                if (_.isEqual(res.body, expectedResponse)) {
-                    chai.assert.fail()
-                }
+                assert.isTrue(_.isEqual(res.body, expectedResponse))
                 done()
         })
     })
