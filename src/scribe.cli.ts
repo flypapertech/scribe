@@ -1,18 +1,19 @@
 import * as cluster from "cluster"
-import * as express from "express"
 import * as parser from "body-parser"
 import * as os from "os"
-import * as mkdirp from "mkdirp"
-import * as yargs from "yargs"
+import mkdirp = require("mkdirp")
+import yargs = require("yargs")
+import express = require("express")
 import * as pgPromise from "pg-promise"
-import * as pgtools from "pgtools"
 import * as Ajv from "ajv"
 import * as DiffMatchPatch from "diff-match-patch"
 import "axios"
-import Axios from "axios";
+import Axios from "axios"
+
+// TODO types for pgtools, remove any's from calls
+const pgtools = require("pgtools")
 
 const argv = yargs.argv
-
 argv.name = argv.name || process.env.SCRIBE_APP_NAME || process.env.HOSTNAME || "localhost"
 argv.home = argv.home || process.env.SCRIBE_APP_HOME || process.cwd()
 argv.port = argv.port || process.env.SCRIBE_APP_PORT || process.env.PORT || 1337
@@ -31,16 +32,15 @@ const dbCreateConfig = {
     host: argv.dbHost
 }
 
-pgtools.createdb(dbCreateConfig, argv.dbName).then(res => {
+pgtools.createdb(dbCreateConfig, argv.dbName).then((res: any) => {
     console.log(res)
-}).catch(err => {
+}).catch((err: any) => {
     if (err.pgErr === undefined || err.pgErr.code !== "42P04") {
         console.error(err)
     }
 })
 
-const dbConnectConfig = dbCreateConfig
-dbConnectConfig["database"] = argv.dbName
+const dbConnectConfig = Object.assign({}, dbCreateConfig, { database: argv.dbName })
 const pgp: pgPromise.IMain = pgPromise({})
 const postgresDb = pgp(dbConnectConfig)
 
@@ -62,7 +62,7 @@ if (cluster.isMaster) {
 const get = (p: string, o: any) =>
     p.split(".").reduce((xs: any, x: any) => (xs && xs[x]) ? xs[x] : null, o)
 
-export function createServer(schemaOverride: object = undefined) {
+export function createServer(schemaOverride: any = undefined) {
     interface Schemas {
         [key: string]: ComponentSchema
     }
@@ -74,10 +74,9 @@ export function createServer(schemaOverride: object = undefined) {
 
     class DB {
         private db: pgPromise.IDatabase<{}>
-        private schemas: Schemas
         private defaultSchema: object
 
-        constructor(db) {
+        constructor(db: pgPromise.IDatabase<{}>) {
             this.db = db
             let defaultSchema = schemaOverride
             if (schemaOverride === undefined) {
@@ -118,12 +117,12 @@ export function createServer(schemaOverride: object = undefined) {
             return defaultSchema
         }
 
-        private formatQueryData(data: JSON, schema: any) {
+        private formatQueryData(data: any, schema: any) {
             let queryData = {
-                sqlColumnSchemas: [],
-                sqlColumnNames: [],
-                sqlColumnIndexes: [],
-                dataArray: []
+                sqlColumnSchemas: [] as string[],
+                sqlColumnNames: [] as string[],
+                sqlColumnIndexes: [] as string[],
+                dataArray: [] as string[]
             }
 
             let ignoredKeyCount = 0
@@ -201,7 +200,7 @@ export function createServer(schemaOverride: object = undefined) {
             let getQuery = `SELECT * FROM ${component} ORDER BY id`
             try {
                 let response = await this.db.query(getQuery)
-                let filteredResponse = []
+                let filteredResponse = [] as any[]
                 if (!filter) {
                     filteredResponse = response
                 }

@@ -2,30 +2,31 @@ process.env.SCRIBE_APP_DB_NAME = "test"
 process.env.SCRIBE_APP_DB_PORT = "5433"
 process.env.SCRIBE_APP_DB_USER = "postgres"
 import {createServer} from "../src/scribe.cli"
-import * as mocha from "mocha"
 import * as chai from "chai"
-import {expect} from "chai"
+import { expect } from "chai"
 import chaiHttp = require("chai-http")
 import * as _ from "lodash"
+
+// TODO get types for mocha, remove anys
+const mocha = require("mocha")
 chai.use(chaiHttp)
-const should = require("should")
 
 let baseEndPoint = "http://localhost:1337"
-let server;
+let server: any;
 
 const schema = require(__dirname + "/../src/default.table.schema.json")
 
-mocha.before(function(done) {
+mocha.before(function(done: any) {
     server = createServer(schema)
     done()
 })
-mocha.after(function(done) {
+mocha.after(function(done: any) {
     server.close()
     done()
 })
 
 mocha.describe("scribe", function() {
-    mocha.it("Checks that server is running", function(done) {
+    mocha.it("Checks that server is running", function(done: any) {
         chai.request(baseEndPoint)
             .get("/")
             .end((err, res) => {
@@ -34,7 +35,7 @@ mocha.describe("scribe", function() {
             })
     })
 
-    mocha.it("DEL component table", function(done) {
+    mocha.it("DEL component table", function(done: any) {
         chai.request(baseEndPoint)
             .del("/testComponent")
             .end((err, res) => {
@@ -44,7 +45,7 @@ mocha.describe("scribe", function() {
             })
     })
 
-    mocha.it("POST to component", function(done) {
+    mocha.it("POST to component", function(done: any) {
         let request = {
             "data": {
                 "something": "somethingstring"
@@ -79,7 +80,7 @@ mocha.describe("scribe", function() {
             })
     })
 
-    mocha.it("GET all entries", function(done) {
+    mocha.it("GET all entries", function(done: any) {
         let expectedResponse = [
             {
                 "id": 1,
@@ -103,7 +104,7 @@ mocha.describe("scribe", function() {
             })
     })
 
-    mocha.it("PUT entry", function(done) {
+    mocha.it("PUT entry", function(done: any) {
         let request = {
             "data": {
                 "something": "we changed this",
@@ -140,7 +141,7 @@ mocha.describe("scribe", function() {
         })
     })
 
-    mocha.it("GET all history", function(done) {
+    mocha.it("GET all history", function(done: any) {
         let expectedResponse = [
             {
                 "id": 1,
@@ -180,7 +181,7 @@ mocha.describe("scribe", function() {
         })
     })
 
-    mocha.it("PUT with schema change", function(done) {
+    mocha.it("PUT with schema change", function(done: any) {
         server.close()
         let newSchema = schema
         newSchema.required.push("new_column")
