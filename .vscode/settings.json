@@ -1,0 +1,5 @@
+{
+    "files.trimFinalNewlines": true,
+    "files.insertFinalNewline": true,
+    "tslint.autoFixOnSave": true
+}
