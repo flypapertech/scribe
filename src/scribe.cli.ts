@@ -59,8 +59,8 @@ if (cluster.isMaster) {
    createServer()
 }
 
-const get = (p, o) =>
-    p.reduce((xs, x) => (xs && xs[x]) ? xs[x] : null, o)
+const get = (p: string, o: any) =>
+    p.split(".").reduce((xs: any, x: any) => (xs && xs[x]) ? xs[x] : null, o)
 
 export function createServer(schemaOverride: object = undefined) {
     interface Schemas {
@@ -212,8 +212,7 @@ export function createServer(schemaOverride: object = undefined) {
                             let matchedFilters = 0
                             let filterCount = Object.keys(filter).length
                             for (let key in filter) {
-                                let nestedKeyArray = key.split(".")
-                                let entryValue = get(nestedKeyArray, response[i])
+                                let entryValue = get(key, response[i])
                                 if (entryValue) {
                                     let filterArray: Array<any>
                                     if (filter[key] instanceof Array) {
@@ -243,7 +242,7 @@ export function createServer(schemaOverride: object = undefined) {
 
                 if (groupBy && typeof groupBy === "string") {
                     filteredResponse = filteredResponse.reduce((grouped, item) => {
-                        let key = get(groupBy.split("."), item)
+                        let key = get(groupBy, item)
                         grouped[key] = grouped[key] || [];
                         grouped[key].push(item);
                         return grouped;
