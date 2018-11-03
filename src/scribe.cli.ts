@@ -6,8 +6,8 @@ import yargs = require("yargs")
 import express = require("express")
 import * as pgPromise from "pg-promise"
 import * as Ajv from "ajv"
-import * as DiffMatchPatch from "diff-match-patch"
 import "axios"
+import { diff_match_patch } from "diff-match-patch"
 import Axios from "axios"
 
 // TODO types for pgtools, remove any's from calls
@@ -186,7 +186,7 @@ export function createServer(schemaOverride: any = undefined) {
                 await this.db.query(ensureAllColumnsExistQuery)
                 let result = await this.db.query(insertQuery, queryData.dataArray)
                 let resultString = JSON.stringify(result[0])
-                const dmp = new DiffMatchPatch.diff_match_patch()
+                const dmp = new diff_match_patch()
                 let diff = dmp.patch_make(resultString, "")
                 let diffValues = [result[0].id, JSON.stringify([dmp.patch_toText(diff)])]
                 let historyResult = await this.db.query(insertHistoryQuery, diffValues)
@@ -273,7 +273,7 @@ export function createServer(schemaOverride: any = undefined) {
                 rawHistory = rawHistory[0]
                 let currentVersion = await this.getSingle(component, id)
                 currentVersion = JSON.stringify(currentVersion[0])
-                const dmp = new DiffMatchPatch.diff_match_patch()
+                const dmp = new diff_match_patch()
                 let oldVersions = []
                 oldVersions.push(JSON.parse(currentVersion))
                 // ignore original empty object hence >= 1
@@ -321,7 +321,7 @@ export function createServer(schemaOverride: any = undefined) {
                 let oldHistory = await this.getSingleHistoryRaw(component, id)
                 await this.db.query(ensureAllColumnsExistQuery)
                 let result = await this.db.query(updateQuery, queryData.dataArray)
-                const dmp = new DiffMatchPatch.diff_match_patch()
+                const dmp = new diff_match_patch()
                 let diff = dmp.patch_make(JSON.stringify(result[0]), JSON.stringify(oldVersion[0]))
                 oldHistory[0].patches.push(dmp.patch_toText(diff))
                 let historyResult = await this.db.query(updateHistoryQuery, JSON.stringify(oldHistory[0].patches))
