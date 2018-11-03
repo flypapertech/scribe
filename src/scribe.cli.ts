@@ -4,9 +4,8 @@ import * as os from "os"
 import mkdirp = require("mkdirp")
 import yargs = require("yargs")
 import express = require("express")
+import Ajv = require("ajv")
 import * as pgPromise from "pg-promise"
-import * as Ajv from "ajv"
-import "axios"
 import { diff_match_patch } from "diff-match-patch"
 import Axios from "axios"
 
