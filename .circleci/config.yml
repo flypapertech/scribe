@@ -39,18 +39,30 @@ jobs:
     <<: *common-build
     docker:
       - image: circleci/node:8
+      - image: circleci/postgres:10-alpine-ram
+        environment:
+          POSTGRES_USER: postgres
   build-node9:
     <<: *common-build
     docker:
       - image: circleci/node:9
+      - image: circleci/postgres:10-alpine-ram
+        environment:
+          POSTGRES_USER: postgres
   build-node10:
     <<: *common-build
     docker:
       - image: circleci/node:10
+      - image: circleci/postgres:10-alpine-ram
+        environment:
+          POSTGRES_USER: postgres
   build-node11:
     <<: *common-build
     docker:
       - image: circleci/node:11
+      - image: circleci/postgres:10-alpine-ram
+        environment:
+          POSTGRES_USER: postgres
 workflows:
   version: 2
   build_all:
