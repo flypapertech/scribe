@@ -63,6 +63,62 @@ jobs:
       - image: circleci/postgres:10-alpine-ram
         environment:
           POSTGRES_USER: postgres
+  build-node8-postgres9.6.10:
+    <<: *common-build
+    docker:
+      - image: circleci/node:8
+      - image: circleci/postgres:9.6.10-alpine-ram
+        environment:
+          POSTGRES_USER: postgres
+  build-node9-postgres9.6.10:
+    <<: *common-build
+    docker:
+      - image: circleci/node:9
+      - image: circleci/postgres:9.6.10-alpine-ram
+        environment:
+          POSTGRES_USER: postgres
+  build-node10-postgres9.6.10:
+    <<: *common-build
+    docker:
+      - image: circleci/node:10
+      - image: circleci/postgres:9.6.10-alpine-ram
+        environment:
+          POSTGRES_USER: postgres
+  build-node11-postgres9.6.10:
+    <<: *common-build
+    docker:
+      - image: circleci/node:11
+      - image: circleci/postgres:9.6.10-alpine-ram
+        environment:
+          POSTGRES_USER: postgres
+  build-node8-postgres9.5.14:
+    <<: *common-build
+    docker:
+      - image: circleci/node:8
+      - image: circleci/postgres:9.5.14-alpine-ram
+        environment:
+          POSTGRES_USER: postgres
+  build-node9-postgres9.5.14:
+    <<: *common-build
+    docker:
+      - image: circleci/node:9
+      - image: circleci/postgres:9.5.14-alpine-ram
+        environment:
+          POSTGRES_USER: postgres
+  build-node10-postgres9.5.14:
+    <<: *common-build
+    docker:
+      - image: circleci/node:10
+      - image: circleci/postgres:9.5.14-alpine-ram
+        environment:
+          POSTGRES_USER: postgres
+  build-node11-postgres9.5.14:
+    <<: *common-build
+    docker:
+      - image: circleci/node:11
+      - image: circleci/postgres:9.5.14-alpine-ram
+        environment:
+          POSTGRES_USER: postgres
 workflows:
   version: 2
   build_all:
@@ -71,3 +127,11 @@ workflows:
       - build-node9
       - build-node10
       - build-node11
+      - build-node8-postgres9.6.10
+      - build-node9-postgres9.6.10
+      - build-node10-postgres9.6.10
+      - build-node11-postgres9.6.10
+      - build-node8-postgres9.5.14
+      - build-node9-postgres9.5.14
+      - build-node10-postgres9.5.14
+      - build-node11-postgres9.5.14
