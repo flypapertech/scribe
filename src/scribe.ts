@@ -391,7 +391,7 @@ class DB {
 
                     case "string":
                         if (property.format === "date-time") {
-                            queryData.sqlColumnSchemas.push(`${key} timestamp`)
+                            queryData.sqlColumnSchemas.push(`${key} timestamptz`)
                         }
                         else {
                             queryData.sqlColumnSchemas.push(`${key} text`)

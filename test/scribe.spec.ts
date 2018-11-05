@@ -4,6 +4,7 @@ import { expect, assert } from "chai"
 import chaiHttp = require("chai-http")
 import mocha = require("mocha");
 import { Server } from "net";
+import { DateTime } from "luxon"
 
 chai.use(chaiHttp)
 
@@ -11,6 +12,10 @@ let baseEndPoint = "http://localhost:1337"
 let server: Server
 
 const schema = require(__dirname + "/../src/default.table.schema.json")
+const now = DateTime.utc()
+const created = now.minus({days: 1}).toISO()
+const modified = now.toISO()
+
 
 mocha.before(function(done: any) {
     createServer(schema).then(scribeServer => {
@@ -48,8 +53,8 @@ mocha.describe("Scribe", function() {
             "data": {
                 "something": "somethingstring"
             },
-            "date_created": "2017-06-22T17:57:32Z",
-            "date_modified": "2018-06-22T17:57:32Z",
+            "date_created": created,
+            "date_modified": modified,
             "created_by": 2,
             "modified_by": 2
         }
@@ -60,8 +65,8 @@ mocha.describe("Scribe", function() {
                 "data": {
                     "something": "somethingstring"
                 },
-                "date_created": "2017-06-22T21:57:32.000Z",
-                "date_modified": "2018-06-22T21:57:32.000Z",
+                "date_created": created,
+                "date_modified": modified,
                 "created_by": 2,
                 "modified_by": 2
             }
@@ -83,8 +88,8 @@ mocha.describe("Scribe", function() {
                 "data": {
                     "something": "somethingstring"
                 },
-                "date_created": "2017-06-22T21:57:32.000Z",
-                "date_modified": "2018-06-22T21:57:32.000Z",
+                "date_created": created,
+                "date_modified": modified,
                 "created_by": 2,
                 "modified_by": 2
             }
@@ -103,8 +108,8 @@ mocha.describe("Scribe", function() {
                 "something": "we changed this",
                 "data2": "new thing"
             },
-            "date_created": "2017-06-22T17:57:32Z",
-            "date_modified": "2018-06-22T17:57:32Z",
+            "date_created": created,
+            "date_modified": modified,
             "created_by": 2,
             "modified_by": 2
         }
@@ -116,8 +121,8 @@ mocha.describe("Scribe", function() {
                     "something": "we changed this",
                     "data2": "new thing"
                 },
-                "date_created": "2017-06-22T21:57:32.000Z",
-                "date_modified": "2018-06-22T21:57:32.000Z",
+                "date_created": created,
+                "date_modified": modified,
                 "created_by": 2,
                 "modified_by": 2
             }
@@ -143,8 +148,8 @@ mocha.describe("Scribe", function() {
                             "something": "we changed this",
                             "data2": "new thing"
                         },
-                        "date_created": "2017-06-22T21:57:32.000Z",
-                        "date_modified": "2018-06-22T21:57:32.000Z",
+                        "date_created": created,
+                        "date_modified": modified,
                         "created_by": 2,
                         "modified_by": 2
                     },
@@ -153,8 +158,8 @@ mocha.describe("Scribe", function() {
                         "data": {
                             "something": "somethingstring"
                         },
-                        "date_created": "2017-06-22T21:57:32.000Z",
-                        "date_modified": "2018-06-22T21:57:32.000Z",
+                        "date_created": created,
+                        "date_modified": modified,
                         "created_by": 2,
                         "modified_by": 2
                     }
@@ -183,8 +188,8 @@ mocha.describe("Scribe", function() {
                 "data": {
                     "something": "somethingstring"
                 },
-                "date_created": "2017-06-22T17:57:32Z",
-                "date_modified": "2018-06-22T17:57:32Z",
+                "date_created": created,
+                "date_modified": modified,
                 "created_by": 2,
                 "modified_by": 2,
                 "new_column": "woot"
@@ -195,8 +200,8 @@ mocha.describe("Scribe", function() {
                     "data": {
                         "something": "somethingstring"
                     },
-                    "date_created": "2017-06-22T21:57:32.000Z",
-                    "date_modified": "2018-06-22T21:57:32.000Z",
+                    "date_created": created,
+                    "date_modified": modified,
                     "created_by": 2,
                     "modified_by": 2,
                     "new_column": "\"woot\""
