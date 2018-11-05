@@ -68,11 +68,6 @@ export function createServer(schemaOverride: any = undefined) {
 
     pgtools.createdb(dbCreateConfig, argv.dbName).then((res: any) => {
         console.log(res)
-    }).catch((err: any) => {
-        if (err.pgErr === undefined || err.pgErr.code !== "42P04") {
-            console.error(err)
-        }
-    })
 
     const dbConnectConfig = Object.assign({}, dbCreateConfig, { database: argv.dbName })
     const pgp: pgPromise.IMain = pgPromise({})
@@ -320,6 +315,11 @@ export function createServer(schemaOverride: any = undefined) {
     })
 
     return scribeServer
+    }).catch((err: any) => {
+        if (err.pgErr === undefined || err.pgErr.code !== "42P04") {
+            console.error(err)
+        }
+    })
 }
 
 class DB {
