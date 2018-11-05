@@ -31,6 +31,7 @@ const dbCreateConfig = {
 }
 
 export function createDb() {
+    console.log(dbConnectConfig)
     pgtools.createdb(dbCreateConfig, argv.dbName).then((res: any) => {
         console.log(res)
     }).catch((err: any) => {
