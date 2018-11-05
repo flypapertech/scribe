@@ -30,13 +30,17 @@ const dbCreateConfig = {
     host: argv.dbHost
 }
 
-pgtools.createdb(dbCreateConfig, argv.dbName).then((res: any) => {
-    console.log(res)
-}).catch((err: any) => {
-    if (err.pgErr === undefined || err.pgErr.code !== "42P04") {
-        console.error(err)
-    }
-})
+export function createDb() {
+    pgtools.createdb(dbCreateConfig, argv.dbName).then((res: any) => {
+        console.log(res)
+    }).catch((err: any) => {
+        if (err.pgErr === undefined || err.pgErr.code !== "42P04") {
+            console.error(err)
+        }
+    })
+}
+
+createDb()
 
 const dbConnectConfig = Object.assign({}, dbCreateConfig, { database: argv.dbName })
 const pgp: pgPromise.IMain = pgPromise({})

@@ -1,7 +1,4 @@
-process.env.SCRIBE_APP_DB_NAME = "test"
-process.env.SCRIBE_APP_DB_USER = "postgres"
-// process.env.SCRIBE_APP_DB_PORT = "5433"
-import { createServer } from "../src/scribe.cli"
+import { createDb, createServer } from "../src/scribe.cli"
 import * as chai from "chai"
 import { expect, assert } from "chai"
 import chaiHttp = require("chai-http")
@@ -16,6 +13,7 @@ let server: any;
 const schema = require(__dirname + "/../src/default.table.schema.json")
 
 mocha.before(function(done: any) {
+    createDb()
     server = createServer(schema)
     done()
 })
