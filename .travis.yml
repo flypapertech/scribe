@@ -23,11 +23,14 @@ before_install:
 - sudo sed -i -e '/local.*peer/s/postgres/all/' -e 's/peer\|md5/trust/g' /etc/postgresql/*/main/pg_hba.conf
 - sudo service postgresql restart
 - sleep 1
-deploy:
-  provider: npm
-  email: npm@flypaper.com
-  api_key:
-    secure: MDPmxpAmF1DBwQPdfU3Wl8GVoTRaBCphnih8h1V/7g4XoTxtAMajh5R9FhNt1hpcCylPPwj7zKA3ad1cqeeGHLd38+7PgTw+89R5fVYyo+nab3kAPAg4WKPZkNpNJgczhluzyL9A0OEowVpvjWK2MlJMNCgX1n+Sfnt5bp4R84X1CTuBZkcBq1bq+mk683+B5X1UfhJevFlfNyXSG3HWP+agcytsdyFZc5uM/hlHUvxM//kwzHQd0bksbPACvL7DblqW2Cbiy6Doij46b63v97MzBTuJKD0A3Y7W6mcW+85S17ydiQoXOD2/j9ayCKCTdyXMujEf7rqN+wkMrouii6UPFIuK0mtsMWmNsN1rN9ShQEDlVwc3K9el5EuR0q2KcKFkTWy446gHQgV/b5/t+SV8JuNIEN3ebrJtOhGJ/X3kONl0ooxuao+Y+PgK76DWOnOSWaOE3qmc3Cu75oXYVJIYAktUgEAK88h3HgeqBzunMvTJ9k2YEpsEKWSJL7TfKhgEICgSsXHQxuH+rKCYrlfJqKlJCZKOBmB/ZUziUI2OvswhGmlkWxKbBdnGP5gN3IMjHj43TAe0WZrOeY9snAQkhjlw/mpDzrZ2d+DvbEzsK6eeJFWQymvl+yfHI79lnirg21FcUSH6c8TIVAi0avefpxFYQtcNBUWKjjty71c=
-  on:
-    tags: true
-    repo: flypapertech/scribe
+
+jobs:
+  include:
+    - stage: deploy
+      provider: npm
+      email: npm@flypaper.com
+      api_key:
+        secure: MDPmxpAmF1DBwQPdfU3Wl8GVoTRaBCphnih8h1V/7g4XoTxtAMajh5R9FhNt1hpcCylPPwj7zKA3ad1cqeeGHLd38+7PgTw+89R5fVYyo+nab3kAPAg4WKPZkNpNJgczhluzyL9A0OEowVpvjWK2MlJMNCgX1n+Sfnt5bp4R84X1CTuBZkcBq1bq+mk683+B5X1UfhJevFlfNyXSG3HWP+agcytsdyFZc5uM/hlHUvxM//kwzHQd0bksbPACvL7DblqW2Cbiy6Doij46b63v97MzBTuJKD0A3Y7W6mcW+85S17ydiQoXOD2/j9ayCKCTdyXMujEf7rqN+wkMrouii6UPFIuK0mtsMWmNsN1rN9ShQEDlVwc3K9el5EuR0q2KcKFkTWy446gHQgV/b5/t+SV8JuNIEN3ebrJtOhGJ/X3kONl0ooxuao+Y+PgK76DWOnOSWaOE3qmc3Cu75oXYVJIYAktUgEAK88h3HgeqBzunMvTJ9k2YEpsEKWSJL7TfKhgEICgSsXHQxuH+rKCYrlfJqKlJCZKOBmB/ZUziUI2OvswhGmlkWxKbBdnGP5gN3IMjHj43TAe0WZrOeY9snAQkhjlw/mpDzrZ2d+DvbEzsK6eeJFWQymvl+yfHI79lnirg21FcUSH6c8TIVAi0avefpxFYQtcNBUWKjjty71c=
+      on:
+        tags: true
+        repo: flypapertech/scribe
