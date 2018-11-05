@@ -37,7 +37,8 @@ jobs:
         
       # run tests!
       - run:
-        command: yarn test
-        environment:
-          SCRIBE_APP_DB_USER: postgres
-          SCRIBE_APP_DB_NAME: test
+          name: Testing
+          command: yarn test
+          environment:
+            SCRIBE_APP_DB_USER: postgres
+            SCRIBE_APP_DB_NAME: test
