@@ -1,19 +1,18 @@
-import { createDb, createServer } from "../src/scribe.cli"
+import { createServer } from "../src/scribe"
 import * as chai from "chai"
 import { expect, assert } from "chai"
 import chaiHttp = require("chai-http")
+import mocha = require("mocha");
 
-// TODO get types for mocha, remove anys
-const mocha = require("mocha")
 chai.use(chaiHttp)
 
 let baseEndPoint = "http://localhost:1337"
-let server: any;
+let server: any
 
 const schema = require(__dirname + "/../src/default.table.schema.json")
 
 mocha.before(function(done: any) {
-    createDb()
+    console.log("before")
     server = createServer(schema)
     done()
 })
@@ -177,37 +176,40 @@ mocha.describe("scribe", function() {
             "type": "string"
         }
 
-        server = createServer(newSchema)
-        let request = {
-            "data": {
-                "something": "somethingstring"
-            },
-            "date_created": "2017-06-22T17:57:32Z",
-            "date_modified": "2018-06-22T17:57:32Z",
-            "created_by": 2,
-            "modified_by": 2,
-            "new_column": "woot"
-        }
-        let expectedResponse = [
-            {
-                "id": 1,
+        // waiting for db connection to close
+        setTimeout(() => {
+            server = createServer(newSchema)
+            let request = {
                 "data": {
                     "something": "somethingstring"
                 },
-                "date_created": "2017-06-22T21:57:32.000Z",
-                "date_modified": "2018-06-22T21:57:32.000Z",
+                "date_created": "2017-06-22T17:57:32Z",
+                "date_modified": "2018-06-22T17:57:32Z",
                 "created_by": 2,
                 "modified_by": 2,
-                "new_column": "\"woot\""
+                "new_column": "woot"
             }
-        ]
+            let expectedResponse = [
+                {
+                    "id": 1,
+                    "data": {
+                        "something": "somethingstring"
+                    },
+                    "date_created": "2017-06-22T21:57:32.000Z",
+                    "date_modified": "2018-06-22T21:57:32.000Z",
+                    "created_by": 2,
+                    "modified_by": 2,
+                    "new_column": "\"woot\""
+                }
+            ]
 
-        chai.request(baseEndPoint)
-            .put("/testComponent/1")
-            .send(request)
-            .end((err, res) => {
-                assert.deepEqual(res.body, expectedResponse)
-                done()
-        })
+            chai.request(baseEndPoint)
+                .put("/testComponent/1")
+                .send(request)
+                .end((err, res) => {
+                    assert.deepEqual(res.body, expectedResponse)
+                    done()
+            })
+        }, 200);
     })
 })

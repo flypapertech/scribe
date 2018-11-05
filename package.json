@@ -25,6 +25,7 @@
   },
   "homepage": "https://github.com/flypapertech/scribe#readme",
   "dependencies": {
+    "@types/mocha": "^5.2.5",
     "ajv": "^6.5.1",
     "axios": "^0.18.0",
     "cluster": "^0.7.7",
