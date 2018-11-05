@@ -4,15 +4,10 @@
 #
 version: 2
 jobs:
-  build-node-common: &common-build
-    docker:
-      - image: circleci/node:8
-      - image: circleci/postgres:10-alpine-ram
-        environment:
-          POSTGRES_USER: postgres
-
+  deploy:
     working_directory: ~/repo
-
+    docker:
+      - image: circleci/node:10
     steps:
       - checkout
 
@@ -27,7 +22,37 @@ jobs:
           paths:
             - node_modules
           key: v1-dependencies-{{ checksum "package.json" }}
-        
+
+      - run:
+          name: Authenticate with registry
+          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/repo/.npmrc
+      - run:
+          name: Publish package
+          command: npm publish
+
+  build-node-common: &common-build
+    docker:
+      - image: circleci/node:10
+      - image: circleci/postgres:10-alpine-ram
+        environment:
+          POSTGRES_USER: postgres
+
+    working_directory: ~/repo
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "package.json" }}
+          - v1-dependencies-
+
+      - run: yarn install
+
+      - save_cache:
+          paths:
+            - node_modules
+          key: v1-dependencies-{{ checksum "package.json" }}
+
       # run tests!
       - run:
           name: Testing
@@ -35,32 +60,61 @@ jobs:
           environment:
             SCRIBE_APP_DB_USER: postgres
             SCRIBE_APP_DB_NAME: test
-  build-node8:
+
+  build-node8-postgres10:
     <<: *common-build
     docker:
       - image: circleci/node:8
       - image: circleci/postgres:10-alpine-ram
         environment:
           POSTGRES_USER: postgres
-  build-node9:
+  build-node9-postgres10:
     <<: *common-build
     docker:
       - image: circleci/node:9
       - image: circleci/postgres:10-alpine-ram
         environment:
           POSTGRES_USER: postgres
-  build-node10:
+  build-node10-postgres10:
     <<: *common-build
     docker:
       - image: circleci/node:10
       - image: circleci/postgres:10-alpine-ram
         environment:
           POSTGRES_USER: postgres
-  build-node11:
+  build-node11-postgres10:
     <<: *common-build
     docker:
       - image: circleci/node:11
       - image: circleci/postgres:10-alpine-ram
+        environment:
+          POSTGRES_USER: postgres
+  build-node8-postgres11:
+    <<: *common-build
+    docker:
+      - image: circleci/node:8
+      - image: circleci/postgres:11-alpine-ram
+        environment:
+          POSTGRES_USER: postgres
+  build-node9-postgres11:
+    <<: *common-build
+    docker:
+      - image: circleci/node:9
+      - image: circleci/postgres:11-alpine-ram
+        environment:
+          POSTGRES_USER: postgres
+  build-node10-postgres11:
+    <<: *common-build
+    docker:
+      - image: circleci/node:10
+      - image: circleci/postgres:11-alpine-ram
+        environment:
+          POSTGRES_USER: postgres
+  build-node11-postgres11:
+    <<: *common-build
+    docker:
+      - image: circleci/node:11
+      - image: circleci/postgres:11-alpine-ram
         environment:
           POSTGRES_USER: postgres
   build-node8-postgres9.6.10:
@@ -91,47 +145,74 @@ jobs:
       - image: circleci/postgres:9.6.10-alpine-ram
         environment:
           POSTGRES_USER: postgres
-  build-node8-postgres9.5.14:
-    <<: *common-build
-    docker:
-      - image: circleci/node:8
-      - image: circleci/postgres:9.5.14-alpine-ram
-        environment:
-          POSTGRES_USER: postgres
-  build-node9-postgres9.5.14:
-    <<: *common-build
-    docker:
-      - image: circleci/node:9
-      - image: circleci/postgres:9.5.14-alpine-ram
-        environment:
-          POSTGRES_USER: postgres
-  build-node10-postgres9.5.14:
-    <<: *common-build
-    docker:
-      - image: circleci/node:10
-      - image: circleci/postgres:9.5.14-alpine-ram
-        environment:
-          POSTGRES_USER: postgres
-  build-node11-postgres9.5.14:
-    <<: *common-build
-    docker:
-      - image: circleci/node:11
-      - image: circleci/postgres:9.5.14-alpine-ram
-        environment:
-          POSTGRES_USER: postgres
 workflows:
   version: 2
   build_all:
     jobs:
-      - build-node8
-      - build-node9
-      - build-node10
-      - build-node11
-      - build-node8-postgres9.6.10
-      - build-node9-postgres9.6.10
-      - build-node10-postgres9.6.10
-      - build-node11-postgres9.6.10
-      - build-node8-postgres9.5.14
-      - build-node9-postgres9.5.14
-      - build-node10-postgres9.5.14
-      - build-node11-postgres9.5.14
+      - build-node8-postgres11:
+          filters:
+            tags:
+              only: /.*/
+      - build-node9-postgres11:
+          filters:
+            tags:
+              only: /.*/
+      - build-node10-postgres11:
+          filters:
+            tags:
+              only: /.*/
+      - build-node11-postgres11:
+          filters:
+            tags:
+              only: /.*/
+      - build-node8-postgres10:
+          filters:
+            tags:
+              only: /.*/
+      - build-node9-postgres10:
+          filters:
+            tags:
+              only: /.*/
+      - build-node10-postgres10:
+          filters:
+            tags:
+              only: /.*/
+      - build-node11-postgres10:
+          filters:
+            tags:
+              only: /.*/
+      - build-node8-postgres9.6.10:
+          filters:
+            tags:
+              only: /.*/
+      - build-node9-postgres9.6.10:
+          filters:
+            tags:
+              only: /.*/
+      - build-node10-postgres9.6.10:
+          filters:
+            tags:
+              only: /.*/
+      - build-node11-postgres9.6.10:
+          filters:
+            tags:
+              only: /.*/
+      - deploy:
+          requires:
+            - build-node8-postgres11
+            - build-node9-postgres11
+            - build-node10-postgres11
+            - build-node11-postgres11
+            - build-node8-postgres10
+            - build-node9-postgres10
+            - build-node10-postgres10
+            - build-node11-postgres10
+            - build-node8-postgres9.6.10
+            - build-node9-postgres9.6.10
+            - build-node10-postgres9.6.10
+            - build-node11-postgres9.6.10
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/

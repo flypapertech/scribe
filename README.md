@@ -6,3 +6,6 @@
 
 # Scribe
 Database modeling services.
+
+## Postgres Support
+>= 9.6.10
