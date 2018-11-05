@@ -37,6 +37,5 @@ jobs:
             - node_modules
           key: v1-dependencies-{{ checksum "package.json" }}
         
-      - run: node ./dist/scribe.cli.js
       # run tests!
       - run: yarn test
