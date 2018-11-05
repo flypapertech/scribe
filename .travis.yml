@@ -1,15 +1,15 @@
 language: node_js
 install:
-  - yarn install
+- yarn install
 script:
-  - yarn test
+- yarn test
 node_js:
-  - '8.0'
-  - '9.0'
-  - '10.0'
-  - '11.0'
+- '8.0'
+- '9.0'
+- '10.0'
+- '11.0'
 addons:
-  postgresql: "10"
+  postgresql: '10'
   apt:
     packages:
     - postgresql-10
@@ -20,14 +20,14 @@ env:
   - SCRIBE_APP_DB_PORT=5433
   - SCRIBE_APP_DB_USER=postgres
 before_install:
-  - sudo sed -i -e '/local.*peer/s/postgres/all/' -e 's/peer\|md5/trust/g' /etc/postgresql/*/main/pg_hba.conf
-  - sudo service postgresql restart
-  - sleep 1
+- sudo sed -i -e '/local.*peer/s/postgres/all/' -e 's/peer\|md5/trust/g' /etc/postgresql/*/main/pg_hba.conf
+- sudo service postgresql restart
+- sleep 1
 deploy:
   provider: npm
   email: npm@flypaper.com
   api_key:
-    secure: A8TO2vnhyJgEoOQ0s/9UnAIxV7bcDvPIOYwaJ5PSW1CQw0XorXMYJI2UO3ufuBgWfppQwV0gBcl4Mf5HNjWvDIu1jcElFHpFD/WJ+ffEceCpZWXwzFUkpLD2sRQgjwA5ys7SNNQX4n1u39EJ5eG/y2+vnvtWL8NikVQotKkctBiyKAHFN90UTBd5ZqpqnbA5Pwm3mrHKB7dCk7KV8h2A3zOaGDxCsPHZMD/VaCvg+ka4oH8VtD7GQCOFHky0xIHLgO2pjjym8J5HAxThaEaih6KkvlDWXpkBLqjtdcPGgcR1EWFwF0aYt4giVdujz+JshX1REqkcK9F/C3vNDfOBSOC953x//lPUo8/7Kp/AgZI8Fy+/k83NwQrjX/fNbuihbI874NRSAkK/KS8lXH4Co1AsP7y+tibkaFjyErIDVFzPrT3gX8VhC+nlO6HTRrteWDqRxwxciYsOjHpyNuvXYvwCNIz0FyWPiieOyeyI3BxKVpkJsyG2jAcVuBZ5whxRzGPZk3jtC6KyAEL/clqJIIyWjXdGHvMHMBwfp2BbkzjTqAdjcJhAl93zDFcG9xGuTO7nK+YHNOTARng8B2wEl/D57m8PHU3ebNKkd/gXsttv20V00gGqR5CZ378TOhrEaLYUMe8m+EySGQreRSEjifJyFKg02BF+UjlpdsA3s3E=
+    secure: MDPmxpAmF1DBwQPdfU3Wl8GVoTRaBCphnih8h1V/7g4XoTxtAMajh5R9FhNt1hpcCylPPwj7zKA3ad1cqeeGHLd38+7PgTw+89R5fVYyo+nab3kAPAg4WKPZkNpNJgczhluzyL9A0OEowVpvjWK2MlJMNCgX1n+Sfnt5bp4R84X1CTuBZkcBq1bq+mk683+B5X1UfhJevFlfNyXSG3HWP+agcytsdyFZc5uM/hlHUvxM//kwzHQd0bksbPACvL7DblqW2Cbiy6Doij46b63v97MzBTuJKD0A3Y7W6mcW+85S17ydiQoXOD2/j9ayCKCTdyXMujEf7rqN+wkMrouii6UPFIuK0mtsMWmNsN1rN9ShQEDlVwc3K9el5EuR0q2KcKFkTWy446gHQgV/b5/t+SV8JuNIEN3ebrJtOhGJ/X3kONl0ooxuao+Y+PgK76DWOnOSWaOE3qmc3Cu75oXYVJIYAktUgEAK88h3HgeqBzunMvTJ9k2YEpsEKWSJL7TfKhgEICgSsXHQxuH+rKCYrlfJqKlJCZKOBmB/ZUziUI2OvswhGmlkWxKbBdnGP5gN3IMjHj43TAe0WZrOeY9snAQkhjlw/mpDzrZ2d+DvbEzsK6eeJFWQymvl+yfHI79lnirg21FcUSH6c8TIVAi0avefpxFYQtcNBUWKjjty71c=
   on:
     tags: true
     repo: flypapertech/scribe
