@@ -15,8 +15,6 @@ jobs:
       - image: circleci/postgres:10-alpine-ram
         environment:
           POSTGRES_USER: postgres
-          SCRIBE_APP_DB_USER: postgres
-          SCRIBE_APP_DB_NAME: test
 
     working_directory: ~/repo
 
@@ -38,4 +36,8 @@ jobs:
           key: v1-dependencies-{{ checksum "package.json" }}
         
       # run tests!
-      - run: yarn test
+      - run:
+        command: yarn test
+        environment:
+          SCRIBE_APP_DB_USER: postgres
+          SCRIBE_APP_DB_NAME: test
