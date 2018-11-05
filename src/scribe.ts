@@ -56,7 +56,7 @@ interface ComponentSchema {
     validator: Ajv.ValidateFunction
 }
 
-export function createServer(schemaOverride: any = undefined) {
+export async function createServer(schemaOverride: any = undefined) {
     const dbCreateConfig = {
         user: argv.dbUser,
         password: argv.dbPass,
@@ -64,10 +64,15 @@ export function createServer(schemaOverride: any = undefined) {
         host: argv.dbHost
     }
 
-    console.log(dbCreateConfig)
-
-    pgtools.createdb(dbCreateConfig, argv.dbName).then((res: any) => {
+    try {
+        let res = await pgtools.createdb(dbCreateConfig, argv.dbName)
         console.log(res)
+    }
+    catch (err) {
+        if (err.pgErr === undefined || err.pgErr.code !== "42P04") {
+            console.error(err)
+        }
+    }
 
     const dbConnectConfig = Object.assign({}, dbCreateConfig, { database: argv.dbName })
     const pgp: pgPromise.IMain = pgPromise({})
@@ -315,11 +320,6 @@ export function createServer(schemaOverride: any = undefined) {
     })
 
     return scribeServer
-    }).catch((err: any) => {
-        if (err.pgErr === undefined || err.pgErr.code !== "42P04") {
-            console.error(err)
-        }
-    })
 }
 
 class DB {

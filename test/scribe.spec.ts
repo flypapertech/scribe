@@ -3,25 +3,27 @@ import * as chai from "chai"
 import { expect, assert } from "chai"
 import chaiHttp = require("chai-http")
 import mocha = require("mocha");
+import { Server } from "net";
 
 chai.use(chaiHttp)
 
 let baseEndPoint = "http://localhost:1337"
-let server: any
+let server: Server
 
 const schema = require(__dirname + "/../src/default.table.schema.json")
 
 mocha.before(function(done: any) {
-    console.log("before")
-    server = createServer(schema)
-    done()
+    createServer(schema).then(scribeServer => {
+        server = scribeServer
+        done()
+    })
 })
 mocha.after(function(done: any) {
     server.close()
     done()
 })
 
-mocha.describe("scribe", function() {
+mocha.describe("Scribe", function() {
     mocha.it("Checks that server is running", function(done: any) {
         chai.request(baseEndPoint)
             .get("/")
@@ -169,16 +171,14 @@ mocha.describe("scribe", function() {
     })
 
     mocha.it("PUT with schema change", function(done: any) {
-        server.close()
-        let newSchema = schema
-        newSchema.required.push("new_column")
-        newSchema.properties["new_column"] = {
-            "type": "string"
-        }
+        server.close(async () =>  {
+            let newSchema = schema
+            newSchema.required.push("new_column")
+            newSchema.properties["new_column"] = {
+                "type": "string"
+            }
 
-        // waiting for db connection to close
-        setTimeout(() => {
-            server = createServer(newSchema)
+            server = await createServer(newSchema)
             let request = {
                 "data": {
                     "something": "somethingstring"
@@ -210,6 +210,6 @@ mocha.describe("scribe", function() {
                     assert.deepEqual(res.body, expectedResponse)
                     done()
             })
-        }, 200);
+        })
     })
 })
