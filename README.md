@@ -5,7 +5,4 @@
 [![dependencies Status](https://david-dm.org/flypapertech/scribe/status.svg)](https://david-dm.org/flypapertech/scribe)
 
 # Scribe
-Database modeling services.
-
-## Postgres Support
->= 9.6.10
+Database modeling services. Supports postgres >=9.6.10
