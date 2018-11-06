@@ -16,3 +16,4 @@ npm-debug*
 *bundle.*
 logs
 cache
+dist

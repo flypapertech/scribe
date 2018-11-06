@@ -68,6 +68,7 @@ jobs:
       - *step-restore-cache
       - *step-install
       - *step-save-cache
+      - run: yarn build
       - run:
           name: Authenticate with registry
           command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/repo/.npmrc
