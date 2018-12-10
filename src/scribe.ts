@@ -352,6 +352,7 @@ class DB {
             let response = await Axios.get(`${argv.schemaBaseUrl}${component}/schema`)
 
             if (response.data === undefined) {
+                console.warn("No schema found, falling back to default schema")
                 return defaultSchema
             }
 
@@ -361,9 +362,10 @@ class DB {
             }
         }
         catch (err) {
-            // console.error(err)
+            console.error(err)
         }
 
+        console.warn("Falling back to default schema")
         return defaultSchema
     }
 
