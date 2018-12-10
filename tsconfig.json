@@ -1,12 +1,13 @@
 {
    "compilerOptions": {
        "strict": true,
-       "typeRoots" : ["./node_modules/@types"],
-       "types" : ["node", "yargs"],
-       "lib": [
-            "es2015.promise",
-            "es2015",
-            "dom"
-        ]
-   }
+       "target": "es6",
+       "module": "commonjs",
+       "moduleResolution": "node",
+       "removeComments": true,
+       "outDir": "dist",
+   },
+   "files": [
+       "./src/scribe.cli.ts"
+   ]
 }
