@@ -5,6 +5,7 @@ import { diff_match_patch } from "diff-match-patch"
 import Axios from "axios"
 import mkdirp = require("mkdirp")
 import yargs = require("yargs")
+import { DateTime } from "luxon";
 
 const pgtools = require("pgtools")
 
@@ -138,7 +139,7 @@ export async function createServer(schemaOverride: any = undefined) {
 
     scribe.get("/:component/:subcomponent/all", (req, res, next) => {
         // get all
-        db.getAll(`${req.params.component}_${req.params.subcomponent}`, req.query.filter, req.query.groupBy).then(result => {
+        db.getAll(`${req.params.component}_${req.params.subcomponent}`, req.query).then(result => {
             res.send(result)
         })
         // fail if component doesn't exist
@@ -147,25 +148,7 @@ export async function createServer(schemaOverride: any = undefined) {
 
     scribe.get("/:component/all", (req, res, next) => {
         // get all
-        db.getAll(req.params.component, req.query.filter, req.query.groupBy).then(result => {
-            res.send(result)
-        })
-        // fail if component doesn't exist
-        // returns array always
-    })
-
-    scribe.get("/:component/:subcomponent/all/history", (req, res, next) => {
-        // get all
-        db.getAllHistory(`${req.params.component}_${req.params.subcomponent}`, req.query.filter, req.query.groupBy).then(result => {
-            res.send(result)
-        })
-        // fail if component doesn't exist
-        // returns array always
-    })
-
-    scribe.get("/:component/all/history", (req, res, next) => {
-        // get all
-        db.getAllHistory(req.params.component, req.query.filter, req.query.groupBy).then(result => {
+        db.getAll(req.params.component, req.query).then(result => {
             res.send(result)
         })
         // fail if component doesn't exist
@@ -184,24 +167,6 @@ export async function createServer(schemaOverride: any = undefined) {
     scribe.get("/:component/:id", (req, res, next) => {
         // get id
         db.getSingle(req.params.component, req.params.id).then(result => {
-            res.send(result)
-        })
-        // fail if component doesn't exist
-        // returns array always
-    })
-
-    scribe.get("/:component/:subcomponent/:id/history", (req, res, next) => {
-        // get history of id
-        db.getSingleHistory(`${req.params.component}_${req.params.subcomponent}`, req.params.id).then(result => {
-            res.send(result)
-        })
-        // fail if component doesn't exist
-        // returns array always
-    })
-
-    scribe.get("/:component/:id/history", (req, res, next) => {
-        // get history of id
-        db.getSingleHistory(req.params.component, req.params.id).then(result => {
             res.send(result)
         })
         // fail if component doesn't exist
@@ -448,15 +413,17 @@ class DB {
             return []
         }
     }
-    public async getAll(component: string, filter: any, groupBy: any) {
+    public async getAll(component: string, query: any) {
+
         let getQuery = `SELECT * FROM ${component} ORDER BY id`
         try {
             let response = await this.db.query(getQuery)
             let filteredResponse = [] as any[]
-            if (!filter) {
+            if (!query.filter) {
                 filteredResponse = response
             }
             else {
+                let filter = query.filter
                 try {
                     filter = JSON.parse(filter)
                     for (let i = 0; i < response.length; i++) {
@@ -491,9 +458,37 @@ class DB {
                 }
             }
 
-            if (groupBy && typeof groupBy === "string") {
+            if (query.timeMachine) {
+                let timeMachine = JSON.parse(query.timeMachine)
+                if (timeMachine.key && timeMachine.timestamp) {
+                    let allHistory = await this.getAllHistory(component, filteredResponse)
+                    let timestamp = DateTime.fromISO(timeMachine.timestamp)
+
+                    filteredResponse = allHistory.map(history => {
+                        return history.history.reduce((historyAtTime, historyEntry) => {
+                            let entryDate = get(timeMachine.key, historyEntry)
+                            if (!entryDate) {
+                                return historyAtTime
+                            }
+
+                            let historyDate = DateTime.fromISO(entryDate)
+                            if (historyDate <= timestamp) {
+                                if (historyAtTime) {
+                                    if (DateTime.fromISO(historyAtTime.date_modified) > historyDate) {
+                                        return historyAtTime
+                                    }
+                                }
+            
+                                return historyEntry
+                            }
+                        }, undefined as any | undefined)
+                    })
+                }
+            }
+
+            if (query.groupBy && typeof query.groupBy === "string") {
                 filteredResponse = filteredResponse.reduce((grouped, item) => {
-                    let key = get(groupBy, item)
+                    let key = get(query.groupBy, item)
                     grouped[key] = grouped[key] || [];
                     grouped[key].push(item);
                     return grouped;
@@ -541,11 +536,10 @@ class DB {
         }
     }
 
-    public async getAllHistory(component: string, filter: any, groupBy: any) {
+    public async getAllHistory(component: string, entries: any[]) {
         try {
-            let allRows = await this.getAll(component, filter, groupBy)
             let allHistory = []
-            for (let entry of allRows) {
+            for (let entry of entries) {
                 // TODO speed this up by hitting the db only once
                 let history = await this.getSingleHistory(component, entry.id)
                 allHistory.push({
