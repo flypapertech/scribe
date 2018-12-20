@@ -137,43 +137,6 @@ mocha.describe("Scribe", function() {
         })
     })
 
-    mocha.it("GET all history", function(done: any) {
-        let expectedResponse = [
-            {
-                "id": 1,
-                "history": [
-                    {
-                        "id": 1,
-                        "data": {
-                            "something": "we changed this",
-                            "data2": "new thing"
-                        },
-                        "date_created": created,
-                        "date_modified": modified,
-                        "created_by": 2,
-                        "modified_by": 2
-                    },
-                    {
-                        "id": 1,
-                        "data": {
-                            "something": "somethingstring"
-                        },
-                        "date_created": created,
-                        "date_modified": modified,
-                        "created_by": 2,
-                        "modified_by": 2
-                    }
-                ]
-            }
-        ]
-
-        chai.request(baseEndPoint)
-            .get("/testComponent/all/history")
-            .end((err, res) => {
-                assert.deepEqual(res.body, expectedResponse)
-                done()
-        })
-    })
 
     mocha.it("PUT with schema change", function(done: any) {
         server.close(async () =>  {
