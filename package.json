@@ -1,6 +1,6 @@
 {
   "name": "@flypapertech/scribe",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Database modeling services.",
   "main": "./dist/scribe.cli.js",
   "bin": {
@@ -32,11 +32,11 @@
     "diff-match-patch": "^1.0.1",
     "express": "^4.16.3",
     "express-bunyan-logger": "^1.3.3",
+    "luxon": "^1.8.2",
     "mkdirp": "^0.5.1",
     "pg-promise": "^8.4.4",
     "pgtools": "^0.3.0",
-    "yargs": "^12.0.2",
-    "luxon": "^1.8.2"
+    "yargs": "^12.0.2"
   },
   "devDependencies": {
     "@types/axios": "^0.14.0",
