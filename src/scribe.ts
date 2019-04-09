@@ -227,7 +227,10 @@ export async function createServer(schemaOverride: any = undefined) {
     })
 
     scribe.delete("/:component/:id", (req, res, next) => {
-        // delete id if it exists
+        // allow :subcomponent route to fall through
+        if (parseInt(req.params.id) === NaN) {
+            next()
+        }
         // fail if it doesn't exist
         db.deleteSingle(req.params.component, req.params.id).then(result => {
             res.send(result)
@@ -235,11 +238,6 @@ export async function createServer(schemaOverride: any = undefined) {
     })
 
     scribe.delete("/:component/:subcomponent", (req, res, next) => {
-        // let :id route fall through
-        if (parseInt(req.params.subcomponent) !== NaN) {
-            next()
-            return
-        }
         // delete table if it exists
         db.dropTable(`${req.params.component}_${req.params.subcomponent}`).then(result => {
             res.send(result)
