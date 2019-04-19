@@ -442,6 +442,10 @@ class DB {
                                     matchedFilters++
                                 }
                             }
+                            else {
+                                // if the object doesn't contain the filter key then ignore the filter
+                                matchedFilters++
+                            }
                         }
 
                         if (matchedFilters === filterCount) {
