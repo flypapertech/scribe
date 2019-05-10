@@ -6,6 +6,7 @@ import Axios from "axios"
 import mkdirp = require("mkdirp")
 import yargs = require("yargs")
 import { DateTime } from "luxon";
+var SqlString = require('sqlstring');
 
 const pgtools = require("pgtools")
 
@@ -412,8 +413,10 @@ class DB {
         }
     }
     public async getAll(component: string, query: any) {
-
         let getQuery = `SELECT * FROM ${component} ORDER BY id`
+        if (!query.where) {
+            getQuery += "WHERE "+ SqlString.escape(query.where)
+        }
         try {
             let response = await this.db.query(getQuery)
             let filteredResponse = [] as any[]
