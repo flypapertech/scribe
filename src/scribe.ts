@@ -6,7 +6,6 @@ import Axios from "axios"
 import mkdirp = require("mkdirp")
 import yargs = require("yargs")
 import { DateTime } from "luxon";
-var SqlString = require('sqlstring');
 
 const pgtools = require("pgtools")
 
@@ -413,55 +412,82 @@ class DB {
         }
     }
     public async getAll(component: string, query: any) {
-        let getQuery = `SELECT * FROM ${component} ORDER BY id`
-        if (!query.where) {
-            getQuery += "WHERE "+ SqlString.escape(query.where)
-        }
-        try {
-            let response = await this.db.query(getQuery)
-            let filteredResponse = [] as any[]
-            if (!query.filter) {
-                filteredResponse = response
-            }
-            else {
-                let filter = query.filter
-                try {
-                    filter = JSON.parse(filter)
-                    for (let i = 0; i < response.length; i++) {
-                        let matchedFilters = 0
-                        let filterCount = Object.keys(filter).length
-                        for (let key in filter) {
-                            let entryValue = get(key, response[i])
-                            if (entryValue) {
-                                let filterArray: Array<any>
-                                if (filter[key] instanceof Array) {
-                                    filterArray = filter[key] as Array<any>
-                                }
-                                else {
-                                    filterArray = [filter[key]]
-                                }
+        try{
+            let getQuery = `SELECT * FROM ${component}`
+            const filters: string[] = []
+            if (query.filter) {
+                let filter = query.filter;
 
-                                if (filterArray.find(x => JSON.stringify(x) === JSON.stringify(entryValue))) {
-                                    matchedFilters++
-                                }
-                            }
-                            else {
-                                // if the object doesn't contain the filter key then ignore the filter
-                                matchedFilters++
-                            }
-                        }
-
-                        if (matchedFilters === filterCount) {
-                            filteredResponse.push(response[i])
-                        }
+                filter = JSON.parse(filter);
+                for (let key in filter) {
+                    const keyParts = key.split(".")
+                    let filterArray: Array<any>
+                    if (filter[key] instanceof Array) {
+                        filterArray = filter[key] as Array<any>
                     }
+                    else {
+                        filterArray = [filter[key]]
+                    }
+                    let filterString = keyParts.shift()
+                    for(let i = 0; i < keyParts.length; i++) {
+                        filterString += `->>'${keyParts[i]}'`
+                    }
+                    const stringifiedfitlerArray = filterArray.map(x => `'${JSON.stringify(x)}'`)
+                    filters.push(`${filterString} IN (${stringifiedfitlerArray.join(",")})`)
                 }
-                catch (err) {
-                    console.error(err)
-                    console.error("Failed to apply filter: ")
-                    console.error(filter)
-                }
+                getQuery += " WHERE " + filters.join(" AND ")
+                console.log(getQuery)
             }
+            getQuery += " ORDER BY id"
+            let filteredResponse: any[] = await this.db.query(getQuery)
+        // if (!query.where) {
+        //     getQuery += "WHERE "+ SqlString.escape(query.where)
+        // }
+        // try {
+        //     let response = await this.db.query(getQuery)
+        //     let filteredResponse = [] as any[]
+        //     if (!query.filter) {
+        //         filteredResponse = response
+        //     }
+        //     else {
+        //         let filter = query.filter
+        //         try {
+        //             filter = JSON.parse(filter)
+        //             for (let i = 0; i < response.length; i++) {
+        //                 let matchedFilters = 0
+        //                 let filterCount = Object.keys(filter).length
+        //                 for (let key in filter) {
+        //                     let entryValue = get(key, response[i])
+        //                     if (entryValue) {
+        //                         let filterArray: Array<any>
+        //                         if (filter[key] instanceof Array) {
+        //                             filterArray = filter[key] as Array<any>
+        //                         }
+        //                         else {
+        //                             filterArray = [filter[key]]
+        //                         }
+
+        //                         if (filterArray.find(x => JSON.stringify(x) === JSON.stringify(entryValue))) {
+        //                             matchedFilters++
+        //                         }
+        //                     }
+        //                     else {
+        //                         // if the object doesn't contain the filter key then ignore the filter
+        //                         matchedFilters++
+        //                     }
+        //                 }
+
+        //                 if (matchedFilters === filterCount) {
+        //                     filteredResponse.push(response[i])
+        //                 }
+        //             }
+        //         }
+        //         catch (err) {
+        //             console.error(err)
+        //             console.error("Failed to apply filter: ")
+        //             console.error(filter)
+        //         }
+        //     }
 
             if (query.timeMachine) {
                 let timeMachine = JSON.parse(query.timeMachine)
