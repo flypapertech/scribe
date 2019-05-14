@@ -431,7 +431,7 @@ class DB {
                     let filterString = keyParts.shift()
                     filterString = pgPromise.as.value(filterString)
                     for(let i = 0; i < keyParts.length; i++) {
-                        filterString += `->>'${pgPromise.as.text(keyParts[i])}'`
+                        filterString += `->>${pgPromise.as.text(keyParts[i])}`
                     }
                     const stringifiedfitlerArray = filterArray.map(x => {
                         if (typeof x !== "string") {
