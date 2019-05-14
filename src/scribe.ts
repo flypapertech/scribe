@@ -432,7 +432,14 @@ class DB {
                     for(let i = 0; i < keyParts.length; i++) {
                         filterString += `->>'${keyParts[i]}'`
                     }
-                    const stringifiedfitlerArray = filterArray.map(x => `'${JSON.stringify(x)}'`)
+                    const stringifiedfitlerArray = filterArray.map(x => {
+                        if (typeof x !== "string") {
+                            return `'${JSON.stringify(x)}'`
+                        }
+
+                        return `'${x}'`
+                    })
+
                     filters.push(`${filterString} IN (${stringifiedfitlerArray.join(",")})`)
                 }
                 getQuery += " WHERE " + filters.join(" AND ")
