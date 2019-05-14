@@ -429,15 +429,16 @@ class DB {
                         filterArray = [filter[key]]
                     }
                     let filterString = keyParts.shift()
+                    filterString = pgPromise.as.value(filterString)
                     for(let i = 0; i < keyParts.length; i++) {
-                        filterString += `->>'${keyParts[i]}'`
+                        filterString += `->>'${pgPromise.as.text(keyParts[i])}'`
                     }
                     const stringifiedfitlerArray = filterArray.map(x => {
                         if (typeof x !== "string") {
-                            return `'${JSON.stringify(x)}'`
+                            return `${pgPromise.as.json(x)}`
                         }
 
-                        return `'${x}'`
+                        return `${pgPromise.as.text(x)}`
                     })
 
                     filters.push(`${filterString} IN (${stringifiedfitlerArray.join(",")})`)
