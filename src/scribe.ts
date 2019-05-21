@@ -157,7 +157,7 @@ export async function createServer(schemaOverride: any = undefined) {
 
     scribe.get("/:component/:subcomponent/:id", (req, res, next) => {
         // get id
-        db.getSingle(`${req.params.component}_${req.params.subcomponent}`, req.params.id).then(result => {
+        db.getSingle(`${req.params.component}_${req.params.subcomponent}`, req.params.id, req.query).then(result => {
             res.send(result)
         })
         // fail if component doesn't exist
@@ -166,7 +166,7 @@ export async function createServer(schemaOverride: any = undefined) {
 
     scribe.get("/:component/:id", (req, res, next) => {
         // get id
-        db.getSingle(req.params.component, req.params.id).then(result => {
+        db.getSingle(req.params.component, req.params.id, req.query).then(result => {
             res.send(result)
         })
         // fail if component doesn't exist
@@ -542,10 +542,13 @@ class DB {
         }
     }
 
-    public async getSingle(component: string, id: string) {
-        let getQuery = `SELECT * FROM ${component} WHERE id=$1 ORDER BY id`
+    public async getSingle(component: string, id: string, query: any) {
+        query.filter = {
+            id
+        }
+
         try {
-            let response = await this.db.query(getQuery, id)
+            const response = await this.getAll(component, query)
             return response;
         } catch (err) {
             console.error(err)
@@ -557,7 +560,7 @@ class DB {
         try {
             let rawHistory = await this.getSingleHistoryRaw(component, id)
             rawHistory = rawHistory[0]
-            let currentVersion = await this.getSingle(component, id)
+            let currentVersion: any = await this.getSingle(component, id, {})
             currentVersion = JSON.stringify(currentVersion[0])
             const dmp = new diff_match_patch()
             let oldVersions = []
@@ -602,7 +605,7 @@ class DB {
         let updateHistoryQuery = `UPDATE ${component}_history SET patches = $1 WHERE foreignKey = ${id} RETURNING *`
         let ensureAllColumnsExistQuery = `ALTER TABLE ${component} ADD COLUMN IF NOT EXISTS ${queryData.sqlColumnSchemas.join(", ADD COLUMN IF NOT EXISTS ")}`
         try {
-            let oldVersion = await this.getSingle(component, id)
+            let oldVersion = await this.getSingle(component, id, {})
             let oldHistory = await this.getSingleHistoryRaw(component, id)
             await this.db.query(ensureAllColumnsExistQuery)
             let result = await this.db.query(updateQuery, queryData.dataArray)
