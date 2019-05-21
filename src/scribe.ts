@@ -543,9 +543,9 @@ class DB {
     }
 
     public async getSingle(component: string, id: string, query: any) {
-        query.filter = {
+        query.filter = JSON.stringify({
             id
-        }
+        })
 
         try {
             const response = await this.getAll(component, query)
