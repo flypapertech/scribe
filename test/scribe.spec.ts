@@ -48,6 +48,16 @@ mocha.describe("Scribe", function() {
             })
     })
 
+    mocha.it("DEL subcomponent table", function(done: any) {
+        chai.request(baseEndPoint)
+            .del("/testComponent/sub")
+            .end((err, res) => {
+                assert.equal(res.status, 200)
+                expect(res.body).to.eql([])
+                done()
+            })
+    })
+
     mocha.it("POST to component", function(done: any) {
         let request = {
             "data": {

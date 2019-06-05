@@ -206,7 +206,7 @@ export async function createServer(schemaOverride: any = undefined) {
     scribe.delete("/:component/:subcomponent/all", (req, res, next) => {
         // delete id if it exists
         // fail if it doesn't exist
-        db.deleteAll(`${req.params.component}_${req.params.subcomponent}`).then(result => {
+        db.deleteAll(`${req.params.component}_${req.params.subcomponent}`, res).then(result => {
             res.send(result)
         })
     })
@@ -214,7 +214,7 @@ export async function createServer(schemaOverride: any = undefined) {
     scribe.delete("/:component/all", (req, res, next) => {
         // delete id if it exists
         // fail if it doesn't exist
-        db.deleteAll(req.params.component).then(result => {
+        db.deleteAll(req.params.component, res).then(result => {
             res.send(result)
         })
     })
@@ -222,25 +222,26 @@ export async function createServer(schemaOverride: any = undefined) {
     scribe.delete("/:component/:subcomponent/:id", (req, res, next) => {
         // delete id if it exists
         // fail if it doesn't exist
-        db.deleteSingle(`${req.params.component}_${req.params.subcomponent}`, req.params.id).then(result => {
+        db.deleteSingle(`${req.params.component}_${req.params.subcomponent}`, req.params.id, res).then(result => {
             res.send(result)
         })
     })
 
     scribe.delete("/:component/:id", (req, res, next) => {
         // allow :subcomponent route to fall through
-        if (parseInt(req.params.id) === NaN) {
+        if (Number.isNaN(Number.parseInt(req.params.id))) {
             next()
+            return
         }
         // fail if it doesn't exist
-        db.deleteSingle(req.params.component, req.params.id).then(result => {
+        db.deleteSingle(req.params.component, req.params.id, res).then(result => {
             res.send(result)
         })
     })
 
     scribe.delete("/:component/:subcomponent", (req, res, next) => {
         // delete table if it exists
-        db.dropTable(`${req.params.component}_${req.params.subcomponent}`).then(result => {
+        db.dropTable(`${req.params.component}_${req.params.subcomponent}`, res).then(result => {
             res.send(result)
         })
         // send response success or fail
@@ -248,7 +249,7 @@ export async function createServer(schemaOverride: any = undefined) {
 
     scribe.delete("/:component", (req, res, next) => {
         // delete table if it exists
-        db.dropTable(req.params.component).then(result => {
+        db.dropTable(req.params.component, res).then(result => {
             res.send(result)
         })
 
@@ -396,6 +397,7 @@ class DB {
 
         let insertQuery = `INSERT INTO ${component}(${queryData.sqlColumnNames.join(",")}) values(${queryData.sqlColumnIndexes.join(",")}) RETURNING *`
         let insertHistoryQuery = `INSERT INTO ${component}_history(foreignKey, patches) values($1, CAST ($2 AS JSON)) RETURNING *`
+        // TODO do individual try catches so we can roll back the parts that did succeed if needed and so we can res.send error messages
         try {
             await this.db.query(createQuery)
             await this.db.query(createHistoryQuery)
@@ -509,27 +511,29 @@ class DB {
                 let timeMachine = JSON.parse(query.timeMachine)
                 if (timeMachine.key && timeMachine.timestamp) {
                     let allHistory = await this.getAllHistory(component, filteredResponse, res)
-                    let timestamp = DateTime.fromISO(timeMachine.timestamp)
+                    if (typeof allHistory !== "string") {
+                        let timestamp = DateTime.fromISO(timeMachine.timestamp)
 
-                    filteredResponse = allHistory.map(history => {
-                        return history.history.reduce((historyAtTime, historyEntry) => {
-                            let entryDate = get(timeMachine.key, historyEntry)
-                            if (!entryDate) {
-                                return historyAtTime
-                            }
-
-                            let historyDate = DateTime.fromISO(entryDate)
-                            if (historyDate <= timestamp) {
-                                if (historyAtTime) {
-                                    if (DateTime.fromISO(historyAtTime.date_modified) > historyDate) {
-                                        return historyAtTime
-                                    }
+                        filteredResponse = allHistory.map(history => {
+                            return history.history.reduce((historyAtTime, historyEntry) => {
+                                let entryDate = get(timeMachine.key, historyEntry)
+                                if (!entryDate) {
+                                    return historyAtTime
                                 }
-            
-                                return historyEntry
-                            }
-                        }, undefined as any | undefined)
-                    })
+
+                                let historyDate = DateTime.fromISO(entryDate)
+                                if (historyDate <= timestamp) {
+                                    if (historyAtTime) {
+                                        if (DateTime.fromISO(historyAtTime.date_modified) > historyDate) {
+                                            return historyAtTime
+                                        }
+                                    }
+                
+                                    return historyEntry
+                                }
+                            }, undefined as any | undefined)
+                        })
+                    }
                 }
             }
 
@@ -547,7 +551,7 @@ class DB {
         } catch (err) {
             console.error(err)
             res.status(500)
-            return "Failed to get data"
+            return "Failed to get record"
         }
     }
 
@@ -561,7 +565,8 @@ class DB {
             return response;
         } catch (err) {
             console.error(err)
-            return []
+            res.status(500)
+            return "Failed to get record"
         }
     }
 
@@ -583,7 +588,8 @@ class DB {
             return oldVersions
         } catch (err) {
             console.error(err)
-            return []
+            res.status(500)
+            return "Failed to get record"
         }
     }
 
@@ -593,17 +599,20 @@ class DB {
             for (let entry of entries) {
                 // TODO speed this up by hitting the db only once
                 let history = await this.getSingleHistory(component, entry.id, res)
-                allHistory.push({
-                    "id": entry.id,
-                    "history": history
-                })
+                if (typeof history !== "string") {
+                    allHistory.push({
+                        "id": entry.id,
+                        "history": history
+                    })
+                }
             }
 
             return allHistory
 
         } catch (err) {
             console.error(err)
-            return []
+            res.status(500)
+            return "Failed to get records"
         }
     }
 
@@ -625,40 +634,44 @@ class DB {
             return result;
         } catch (err) {
             console.error(err)
-            return []
+            res.status(500)
+            return "Failed to update record"
         }
     }
 
-    public async deleteSingle(component: string, id: string) {
+    public async deleteSingle(component: string, id: string, res: express.Response) {
         let deleteQuery = `DELETE FROM ${component} WHERE id=$1`
         try {
             let response = await this.db.query(deleteQuery, id)
             return response;
         } catch (err) {
             console.error(err)
-            return []
+            res.status(500)
+            return "Failed to delete record"
         }
     }
 
-    public async deleteAll(component: string) {
+    public async deleteAll(component: string, res: express.Response) {
         let deleteQuery = `TRUNCATE ${component} RESTART IDENTITY CASCADE`
         try {
             let response = await this.db.query(deleteQuery)
             return response;
         } catch (err) {
             console.error(err)
-            return []
+            res.status(500)
+            return "Failed to delete records"
         }
     }
 
-    public async dropTable(component: string) {
+    public async dropTable(component: string, res: express.Response) {
         let deleteAllQuery = `DROP TABLE IF EXISTS ${component}, ${component}_history`
         try {
             let response = await this.db.query(deleteAllQuery)
             return response;
         } catch (err) {
             console.error(err)
-            return []
+            res.status(500)
+            return "Failed to drop table"
         }
     }
 
