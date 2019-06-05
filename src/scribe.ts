@@ -105,6 +105,24 @@ export async function createServer(schemaOverride: any = undefined) {
 
     let db = new DB(postgresDb, schemaOverride)
 
+    scribe.post("/:component/all", express.json(), (req, res, next) => {
+        // get all
+        db.getAll(req.params.component, req.query, req.body, res).then(result => {
+            res.send(result)
+        })
+        // fail if component doesn't exist
+        // returns array always
+    })
+
+    scribe.post("/:component/:subcomponent/all", express.json(), (req, res, next) => {
+        // get all
+        db.getAll(`${req.params.component}_${req.params.subcomponent}`, req.query, req.body, res).then(result => {
+            res.send(result)
+        })
+        // fail if component doesn't exist
+        // returns array always
+    })
+
     scribe.post("/:component/:subcomponent", express.json(), async (req, res, next) => {
 
         let componentSchema = await db.getComponentSchema(`${req.params.component}/${req.params.subcomponent}`)
@@ -135,7 +153,6 @@ export async function createServer(schemaOverride: any = undefined) {
 
         // send response success or fail
     })
-
 
     scribe.get("/:component/:subcomponent/all", express.json(), (req, res, next) => {
         // get all
