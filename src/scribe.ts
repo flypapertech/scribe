@@ -6,6 +6,7 @@ import Axios from "axios"
 import mkdirp = require("mkdirp")
 import yargs = require("yargs")
 import { DateTime } from "luxon";
+import { type } from "os";
 
 const pgtools = require("pgtools")
 
@@ -137,18 +138,18 @@ export async function createServer(schemaOverride: any = undefined) {
     })
 
 
-    scribe.get("/:component/:subcomponent/all", (req, res, next) => {
+    scribe.get("/:component/:subcomponent/all", express.json(), (req, res, next) => {
         // get all
-        db.getAll(`${req.params.component}_${req.params.subcomponent}`, req.query).then(result => {
+        db.getAll(`${req.params.component}_${req.params.subcomponent}`, req.query, req.body, res).then(result => {
             res.send(result)
         })
         // fail if component doesn't exist
         // returns array always
     })
 
-    scribe.get("/:component/all", (req, res, next) => {
+    scribe.get("/:component/all", express.json(), (req, res, next) => {
         // get all
-        db.getAll(req.params.component, req.query).then(result => {
+        db.getAll(req.params.component, req.query, req.body, res).then(result => {
             res.send(result)
         })
         // fail if component doesn't exist
@@ -157,7 +158,7 @@ export async function createServer(schemaOverride: any = undefined) {
 
     scribe.get("/:component/:subcomponent/:id", (req, res, next) => {
         // get id
-        db.getSingle(`${req.params.component}_${req.params.subcomponent}`, req.params.id, req.query).then(result => {
+        db.getSingle(`${req.params.component}_${req.params.subcomponent}`, req.params.id, {}, {}, res).then(result => {
             res.send(result)
         })
         // fail if component doesn't exist
@@ -166,7 +167,7 @@ export async function createServer(schemaOverride: any = undefined) {
 
     scribe.get("/:component/:id", (req, res, next) => {
         // get id
-        db.getSingle(req.params.component, req.params.id, req.query).then(result => {
+        db.getSingle(req.params.component, req.params.id, {}, {}, res).then(result => {
             res.send(result)
         })
         // fail if component doesn't exist
@@ -183,7 +184,7 @@ export async function createServer(schemaOverride: any = undefined) {
         }
 
         // update id if it exists
-        db.updateSingle(`${req.params.component}_${req.params.subcomponent}`, req.params.id, req.body, componentSchema.schema).then(result => {
+        db.updateSingle(`${req.params.component}_${req.params.subcomponent}`, req.params.id, req.body, componentSchema.schema, res).then(result => {
             res.send(result)
         })
     })
@@ -198,7 +199,7 @@ export async function createServer(schemaOverride: any = undefined) {
         }
 
         // update id if it exists
-        db.updateSingle(req.params.component, req.params.id, req.body, componentSchema.schema).then(result => {
+        db.updateSingle(req.params.component, req.params.id, req.body, componentSchema.schema, res).then(result => {
             res.send(result)
         })
     })
@@ -325,7 +326,7 @@ class DB {
             }
         }
         catch (err) {
-            console.error(err)
+            // console.error(err)
         }
 
         console.warn("Falling back to default schema")
@@ -411,14 +412,21 @@ class DB {
             return []
         }
     }
-    public async getAll(component: string, query: any) {
+    public async getAll(component: string, query: any, body: any, res: express.Response) {
         try{
             let getQuery = `SELECT * FROM ${component}`
             const filters: string[] = []
-            if (query.filter) {
-                let filter = query.filter;
+            const userFilter = (query.filter) ? query.filter : body.filter
+            let filter = undefined
+            try {
+                filter = (typeof userFilter === "string") ? JSON.parse(userFilter) : userFilter
+            }
+            catch(error) {
+                res.status(400)
+                return "Failed to parse filter"
+            }
 
-                filter = JSON.parse(filter);
+            if (userFilter) {
                 for (let key in filter) {
                     const keyParts = key.split(".")
                     let filterArray: Array<any>
@@ -500,7 +508,7 @@ class DB {
             if (query.timeMachine) {
                 let timeMachine = JSON.parse(query.timeMachine)
                 if (timeMachine.key && timeMachine.timestamp) {
-                    let allHistory = await this.getAllHistory(component, filteredResponse)
+                    let allHistory = await this.getAllHistory(component, filteredResponse, res)
                     let timestamp = DateTime.fromISO(timeMachine.timestamp)
 
                     filteredResponse = allHistory.map(history => {
@@ -538,17 +546,18 @@ class DB {
 
         } catch (err) {
             console.error(err)
-            return []
+            res.status(500)
+            return "Failed to get data"
         }
     }
 
-    public async getSingle(component: string, id: string, query: any) {
+    public async getSingle(component: string, id: string, query: any, body: any, res: express.Response) {
         query.filter = JSON.stringify({
             id
         })
 
         try {
-            const response = await this.getAll(component, query)
+            const response = await this.getAll(component, query, body, res)
             return response;
         } catch (err) {
             console.error(err)
@@ -556,11 +565,11 @@ class DB {
         }
     }
 
-    public async getSingleHistory(component: string, id: string) {
+    public async getSingleHistory(component: string, id: string, res: express.Response) {
         try {
             let rawHistory = await this.getSingleHistoryRaw(component, id)
             rawHistory = rawHistory[0]
-            let currentVersion: any = await this.getSingle(component, id, {})
+            let currentVersion: any = await this.getSingle(component, id, {}, {}, res)
             currentVersion = JSON.stringify(currentVersion[0])
             const dmp = new diff_match_patch()
             let oldVersions = []
@@ -578,12 +587,12 @@ class DB {
         }
     }
 
-    public async getAllHistory(component: string, entries: any[]) {
+    public async getAllHistory(component: string, entries: any[], res: express.Response) {
         try {
             let allHistory = []
             for (let entry of entries) {
                 // TODO speed this up by hitting the db only once
-                let history = await this.getSingleHistory(component, entry.id)
+                let history = await this.getSingleHistory(component, entry.id, res)
                 allHistory.push({
                     "id": entry.id,
                     "history": history
@@ -598,14 +607,14 @@ class DB {
         }
     }
 
-    public async updateSingle(component: string, id: string, data: JSON, schema: object) {
+    public async updateSingle(component: string, id: string, data: JSON, schema: object, res: express.Response) {
         let queryData = this.formatQueryData(data, schema)
 
         let updateQuery = `UPDATE ${component} SET (${queryData.sqlColumnNames.join(",")}) = (${queryData.sqlColumnIndexes.join(",")}) WHERE id = ${id} RETURNING *`
         let updateHistoryQuery = `UPDATE ${component}_history SET patches = $1 WHERE foreignKey = ${id} RETURNING *`
         let ensureAllColumnsExistQuery = `ALTER TABLE ${component} ADD COLUMN IF NOT EXISTS ${queryData.sqlColumnSchemas.join(", ADD COLUMN IF NOT EXISTS ")}`
         try {
-            let oldVersion = await this.getSingle(component, id, {})
+            let oldVersion = await this.getSingle(component, id, {}, {}, res)
             let oldHistory = await this.getSingleHistoryRaw(component, id)
             await this.db.query(ensureAllColumnsExistQuery)
             let result = await this.db.query(updateQuery, queryData.dataArray)
