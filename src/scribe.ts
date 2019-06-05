@@ -6,7 +6,6 @@ import Axios from "axios"
 import mkdirp = require("mkdirp")
 import yargs = require("yargs")
 import { DateTime } from "luxon";
-import { type } from "os";
 
 const pgtools = require("pgtools")
 

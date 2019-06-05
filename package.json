@@ -40,7 +40,6 @@
     "yargs": "^12.0.2"
   },
   "devDependencies": {
-    "@types/axios": "^0.14.0",
     "@types/chai": "^4.1.6",
     "@types/chai-http": "^3.0.5",
     "@types/diff-match-patch": "^1.0.32",
@@ -56,6 +55,7 @@
     "mocha": "^5.2.0",
     "should": "^13.2.3",
     "ts-node": "^6.1.1",
+    "tslint": "^5.17.0",
     "typescript": "^2.9.2",
     "uglify-es": "^3.3.9"
   }
