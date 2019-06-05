@@ -1,11 +1,11 @@
-import pgPromise = require("pg-promise");
+import pgPromise = require("pg-promise")
 import express = require("express")
 import Ajv = require("ajv")
 import { diff_match_patch } from "diff-match-patch"
 import Axios from "axios"
 import mkdirp = require("mkdirp")
 import yargs = require("yargs")
-import { DateTime } from "luxon";
+import { DateTime } from "luxon"
 
 const pgtools = require("pgtools")
 
@@ -77,7 +77,7 @@ export async function createServer(schemaOverride: any = undefined) {
 
     const dbConnectConfig = Object.assign({}, dbCreateConfig, { database: argv.dbName })
     const pgp: pgPromise.IMain = pgPromise({})
-    const postgresDb = pgp(dbConnectConfig)
+    const postgresDb: pgPromise.IDatabase<{}> =  pgp(dbConnectConfig)
 
     const scribe = express()
     if (argv.mode === "production") {
@@ -318,7 +318,18 @@ class DB {
     }
 
     public async getComponentSchema(component: string): Promise<ComponentSchema> {
-        const ajv = new Ajv();
+        const ajv = new Ajv({
+            loadSchema: async (uri: string) => {
+                try {
+                    const res = await Axios.get(uri)
+                    return res.data
+                }
+                catch (error) {
+                    throw new Error("Loading error: " + error)
+                }
+            }
+        })
+
         let defaultSchema = {
             "schema": this.defaultSchema,
             "validator": ajv.compile(this.defaultSchema)
@@ -337,13 +348,14 @@ class DB {
                 return defaultSchema
             }
 
+            const validator = await ajv.compileAsync(response.data)
             return {
                 schema: response.data,
-                validator: ajv.compile(response.data)
+                validator
             }
         }
         catch (err) {
-            // console.error(err)
+            console.error(err)
         }
 
         console.warn("Falling back to default schema")
