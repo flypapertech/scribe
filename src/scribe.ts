@@ -6,6 +6,9 @@ import Axios from "axios"
 import mkdirp = require("mkdirp")
 import yargs = require("yargs")
 import { DateTime } from "luxon"
+import { RedisClient } from "redis"
+const {promisify} = require("util")
+
 
 const pgtools = require("pgtools")
 
@@ -53,7 +56,7 @@ const argv = yargs.env("SCRIBE_APP")
     .option("redisPort", {
         default: 6379
     })
-    .option("redisSchemaDB", {
+    .option("redisSchemaDb", {
         default: 1
     })
     .option("schemaBaseUrl", {
@@ -336,6 +339,8 @@ export async function createServer(schemaOverride: any = undefined) {
 class DB {
     private db: pgPromise.IDatabase<{}>
     private defaultSchema: object
+    private schemaCache: RedisClient
+    private schemaGetAsync: any
 
     constructor(db: pgPromise.IDatabase<{}>, schemaOverride: any = undefined) {
         this.db = db
@@ -345,6 +350,15 @@ class DB {
         }
 
         this.defaultSchema = defaultSchema
+        this.schemaCache = new RedisClient({
+            host: argv.redisHost,
+            port: argv.redisPort,
+            db: argv.redisSchemaDb,
+        })
+
+        // flush the schema cache upon startup
+        this.schemaCache.flushdb()
+        this.schemaGetAsync = promisify(this.schemaCache.get).bind(this.schemaCache)
     }
 
     public async getComponentSchema(component: string): Promise<ComponentSchema | string> {
@@ -359,6 +373,26 @@ class DB {
                 }
             }
         })
+
+        const storedSchemaString = await this.schemaGetAsync(component)
+
+        if (storedSchemaString) {
+            try {
+                const schemaObject = JSON.parse(storedSchemaString)
+                const validator = await ajv.compileAsync(schemaObject)
+                console.log("Using cached schema for " + component)
+                return {
+                    "schema": schemaObject,
+                    validator
+                }
+            }
+            catch(error) {
+                console.log(`Cached schema for ${component} is corrupt, querying for it again`)
+            }
+        }
+        else {
+            console.log(`No cache entry for ${component} schema, requesting schema from server`)
+        }
 
         let defaultSchema = {
             "schema": this.defaultSchema,
@@ -387,6 +421,7 @@ class DB {
             }
 
             const validator = await ajv.compileAsync(response.data)
+            this.schemaCache.set(component, JSON.stringify(response.data))
             return {
                 schema: response.data,
                 validator
@@ -524,7 +559,6 @@ class DB {
                     filters.push(`${filterString} IN (${stringifiedfitlerArray.join(",")})`)
                 }
                 getQuery += " WHERE " + filters.join(" AND ")
-                console.log(getQuery)
             }
             getQuery += " ORDER BY id"
             let filteredResponse: any[] = await this.db.query(getQuery)

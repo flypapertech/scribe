@@ -26,6 +26,7 @@
   "homepage": "https://github.com/flypapertech/scribe#readme",
   "dependencies": {
     "@types/mocha": "^5.2.5",
+    "@types/redis": "^2.8.13",
     "ajv": "^6.5.1",
     "axios": "^0.18.0",
     "cluster": "^0.7.7",
@@ -36,6 +37,7 @@
     "mkdirp": "^0.5.1",
     "pg-promise": "^8.4.4",
     "pgtools": "^0.3.0",
+    "redis": "^2.8.0",
     "sqlstring": "^2.3.1",
     "yargs": "^12.0.2"
   },
