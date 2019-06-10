@@ -339,7 +339,7 @@ export async function createServer(schemaOverride: any = undefined) {
 class DB {
     private db: pgPromise.IDatabase<{}>
     private defaultSchema: object
-    private schemaCache: RedisClient
+    private schemaCache: RedisClient | undefined
     private schemaGetAsync: any
 
     constructor(db: pgPromise.IDatabase<{}>, schemaOverride: any = undefined) {
@@ -350,15 +350,19 @@ class DB {
         }
 
         this.defaultSchema = defaultSchema
-        this.schemaCache = new RedisClient({
-            host: argv.redisHost,
-            port: argv.redisPort,
-            db: argv.redisSchemaDb,
-        })
-
-        // flush the schema cache upon startup
-        this.schemaCache.flushdb()
-        this.schemaGetAsync = promisify(this.schemaCache.get).bind(this.schemaCache)
+        try {
+            this.schemaCache = new RedisClient({
+                host: argv.redisHost,
+                port: argv.redisPort,
+                db: argv.redisSchemaDb,
+            })
+            // flush the schema cache upon startup
+            this.schemaCache.flushdb()
+            this.schemaGetAsync = promisify(this.schemaCache.get).bind(this.schemaCache)
+        }
+        catch(error) {
+            console.log("Failed to connect to Redis database")
+        }
     }
 
     public async getComponentSchema(component: string): Promise<ComponentSchema | string> {
@@ -374,24 +378,29 @@ class DB {
             }
         })
 
-        const storedSchemaString = await this.schemaGetAsync(component)
+        if (this.schemaGetAsync) {
+            const storedSchemaString = await this.schemaGetAsync(component)
 
-        if (storedSchemaString) {
-            try {
-                const schemaObject = JSON.parse(storedSchemaString)
-                const validator = await ajv.compileAsync(schemaObject)
-                console.log("Using cached schema for " + component)
-                return {
-                    "schema": schemaObject,
-                    validator
+            if (storedSchemaString) {
+                try {
+                    const schemaObject = JSON.parse(storedSchemaString)
+                    const validator = await ajv.compileAsync(schemaObject)
+                    console.log("Using cached schema for " + component)
+                    return {
+                        "schema": schemaObject,
+                        validator
+                    }
+                }
+                catch(error) {
+                    console.log(`Cached schema for ${component} is corrupt, querying for it again`)
                 }
             }
-            catch(error) {
-                console.log(`Cached schema for ${component} is corrupt, querying for it again`)
+            else {
+                console.log(`No cache entry for ${component} schema, requesting schema from server`)
             }
         }
         else {
-            console.log(`No cache entry for ${component} schema, requesting schema from server`)
+            console.log("Schema cache is unavailable")
         }
 
         let defaultSchema = {
@@ -421,7 +430,9 @@ class DB {
             }
 
             const validator = await ajv.compileAsync(response.data)
-            this.schemaCache.set(component, JSON.stringify(response.data))
+            if (this.schemaCache) {
+                this.schemaCache.set(component, JSON.stringify(response.data))
+            }
             return {
                 schema: response.data,
                 validator
