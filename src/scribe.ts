@@ -47,6 +47,15 @@ const argv = yargs.env("SCRIBE_APP")
     .option("requireSchema", {
         default: false
     })
+    .option("redisHost", {
+        default: "127.0.0.1"
+    })
+    .option("redisPort", {
+        default: 6379
+    })
+    .option("redisSchemaDB", {
+        default: 1
+    })
     .option("schemaBaseUrl", {
         default: "http://localhost:8080/"
     }).argv
