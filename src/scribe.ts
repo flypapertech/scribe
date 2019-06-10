@@ -44,6 +44,9 @@ const argv = yargs.env("SCRIBE_APP")
     .option("dbName", {
         default: "scribe"
     })
+    .option("requireSchema", {
+        default: false
+    })
     .option("schemaBaseUrl", {
         default: "http://localhost:8080/"
     }).argv
@@ -125,11 +128,16 @@ export async function createServer(schemaOverride: any = undefined) {
 
     scribe.post("/:component/:subcomponent", express.json(), async (req, res, next) => {
 
-        let componentSchema = await db.getComponentSchema(`${req.params.component}/${req.params.subcomponent}`)
+        const componentSchema = await db.getComponentSchema(`${req.params.component}/${req.params.subcomponent}`)
+        if (typeof componentSchema === "string") {
+            res.status(500).send(componentSchema)
+            return
+        }
+
         // sanity check json body
         if (componentSchema.validator(req.body) === false) {
             res.status(400).send(componentSchema.validator.errors)
-            return;
+            return
         }
 
         db.createSingle(`${req.params.component}_${req.params.subcomponent}`, req.body, componentSchema.schema).then(result => {
@@ -140,7 +148,11 @@ export async function createServer(schemaOverride: any = undefined) {
 
     scribe.post("/:component", express.json(), async (req, res, next) => {
 
-        let componentSchema = await db.getComponentSchema(req.params.component)
+        const componentSchema = await db.getComponentSchema(req.params.component)
+        if (typeof componentSchema === "string") {
+            res.status(500).send(componentSchema)
+            return
+        }
         // sanity check json body
         if (componentSchema.validator(req.body) === false) {
             res.status(400).send(componentSchema.validator.errors)
@@ -192,7 +204,11 @@ export async function createServer(schemaOverride: any = undefined) {
 
     scribe.put("/:component/:subcomponent/:id", express.json(), async (req, res, next) => {
         // sanity check json body
-        let componentSchema = await db.getComponentSchema(`${req.params.component}/${req.params.subcomponent}`)
+        const componentSchema = await db.getComponentSchema(`${req.params.component}/${req.params.subcomponent}`)
+        if (typeof componentSchema === "string") {
+            res.status(500).send(componentSchema)
+            return
+        }
         // sanity check json body
         if (componentSchema.validator(req.body) === false) {
             res.status(400).send(componentSchema.validator.errors)
@@ -207,7 +223,12 @@ export async function createServer(schemaOverride: any = undefined) {
 
     scribe.put("/:component/:id", express.json(), async (req, res, next) => {
         // sanity check json body
-        let componentSchema = await db.getComponentSchema(req.params.component)
+        const componentSchema = await db.getComponentSchema(req.params.component)
+        if (typeof componentSchema === "string") {
+            res.status(500).send(componentSchema)
+            return
+        }
+
         // sanity check json body
         if (componentSchema.validator(req.body) === false) {
             res.status(400).send(componentSchema.validator.errors)
@@ -317,7 +338,7 @@ class DB {
         this.defaultSchema = defaultSchema
     }
 
-    public async getComponentSchema(component: string): Promise<ComponentSchema> {
+    public async getComponentSchema(component: string): Promise<ComponentSchema | string> {
         const ajv = new Ajv({
             loadSchema: async (uri: string) => {
                 try {
@@ -336,16 +357,24 @@ class DB {
         }
 
         if (argv.schemaBaseUrl === undefined) {
-            return defaultSchema
+            if (!argv.requireSchema) {
+                return defaultSchema
+            }
+
+            return "Missing Schema Base Url"
         }
 
         // TODO should this fall back or error? If scribe can't contact the server then should we be allowing random data in?
         try {
-            let response = await Axios.get(`${argv.schemaBaseUrl}${component}/schema`)
+            const schemaUrl = `${argv.schemaBaseUrl}${component}/schema`
+            let response = await Axios.get(schemaUrl)
 
             if (response.data === undefined) {
-                console.warn("No schema found, falling back to default schema")
-                return defaultSchema
+                if (!argv.requireSchema) {
+                    console.warn("No schema found, falling back to default schema")
+                    return defaultSchema
+                }
+                return "Failed to get schema at " + schemaUrl
             }
 
             const validator = await ajv.compileAsync(response.data)
@@ -358,8 +387,12 @@ class DB {
             console.error(err)
         }
 
-        console.warn("Falling back to default schema")
-        return defaultSchema
+        if (!argv.requireSchema) {
+            console.warn("Falling back to default schema")
+            return defaultSchema
+        }
+
+        return "Failed to look up schema"
     }
 
     private formatQueryData(data: any, schema: any) {
