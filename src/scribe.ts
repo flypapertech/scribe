@@ -339,8 +339,9 @@ export async function createServer(schemaOverride: any = undefined) {
 class DB {
     private db: pgPromise.IDatabase<{}>
     private defaultSchema: object
-    private schemaCache: RedisClient | undefined
+    private schemaCache: RedisClient
     private schemaGetAsync: any
+    private redisError: boolean = false
 
     constructor(db: pgPromise.IDatabase<{}>, schemaOverride: any = undefined) {
         this.db = db
@@ -350,19 +351,19 @@ class DB {
         }
 
         this.defaultSchema = defaultSchema
-        try {
-            this.schemaCache = new RedisClient({
-                host: argv.redisHost,
-                port: argv.redisPort,
-                db: argv.redisSchemaDb,
-            })
-            // flush the schema cache upon startup
-            this.schemaCache.flushdb()
-            this.schemaGetAsync = promisify(this.schemaCache.get).bind(this.schemaCache)
-        }
-        catch(error) {
+        this.schemaCache = new RedisClient({
+            host: argv.redisHost,
+            port: argv.redisPort,
+            db: argv.redisSchemaDb,
+        })
+
+        this.schemaCache.on("error", (error) => {
             console.log("Failed to connect to Redis database")
-        }
+            this.redisError = true
+        })
+        // flush the schema cache upon startup
+        this.schemaCache.flushdb()
+        this.schemaGetAsync = promisify(this.schemaCache.get).bind(this.schemaCache)
     }
 
     public async getComponentSchema(component: string): Promise<ComponentSchema | string> {
@@ -378,7 +379,7 @@ class DB {
             }
         })
 
-        if (this.schemaGetAsync) {
+        if (!this.redisError) {
             const storedSchemaString = await this.schemaGetAsync(component)
 
             if (storedSchemaString) {
@@ -430,7 +431,7 @@ class DB {
             }
 
             const validator = await ajv.compileAsync(response.data)
-            if (this.schemaCache) {
+            if (!this.redisError) {
                 this.schemaCache.set(component, JSON.stringify(response.data))
             }
             return {
