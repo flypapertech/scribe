@@ -665,6 +665,10 @@ class DB {
             return filteredResponse;
 
         } catch (err) {
+            // relation does not exist so get request is going to return nothing
+            if (err.code === "42P01") {
+                return []
+            }
             console.error(err)
             res.status(500)
             return "Failed to get record"
@@ -680,6 +684,10 @@ class DB {
             const response = await this.getAll(component, query, body, res)
             return response;
         } catch (err) {
+            // relation does not exist so get request is going to return nothing
+            if (err.code === "42P01") {
+                return []
+            }
             console.error(err)
             res.status(500)
             return "Failed to get record"
@@ -703,6 +711,10 @@ class DB {
 
             return oldVersions
         } catch (err) {
+            // relation does not exist so get request is going to return nothing
+            if (err.code === "42P01") {
+                return []
+            }
             console.error(err)
             res.status(500)
             return "Failed to get record"
@@ -726,6 +738,10 @@ class DB {
             return allHistory
 
         } catch (err) {
+            // relation does not exist so get request is going to return nothing
+            if (err.code === "42P01") {
+                return []
+            }
             console.error(err)
             res.status(500)
             return "Failed to get records"
