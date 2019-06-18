@@ -179,6 +179,15 @@ mocha.describe("Scribe", function() {
             })
     })
 
+    mocha.it("GET from table that doesn't exist should return empty array", function(done: any) {
+        const expectedResponse: any[] = []
+        chai.request(baseEndPoint)
+            .get("/someTableThatDoesntExist/all")
+            .end((err, res) => {
+                assert.deepEqual(res.body, expectedResponse)
+                done()
+            })
+    })
 
     mocha.it("PUT entry", function(done: any) {
         let request = {
