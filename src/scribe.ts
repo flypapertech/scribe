@@ -754,6 +754,7 @@ class DB {
         let updateQuery = `UPDATE ${component} SET (${queryData.sqlColumnNames.join(",")}) = (${queryData.sqlColumnIndexes.join(",")}) WHERE id = ${id} RETURNING *`
         let updateHistoryQuery = `UPDATE ${component}_history SET patches = $1 WHERE foreignKey = ${id} RETURNING *`
         let ensureAllColumnsExistQuery = `ALTER TABLE ${component} ADD COLUMN IF NOT EXISTS ${queryData.sqlColumnSchemas.join(", ADD COLUMN IF NOT EXISTS ")}`
+        let insertHistoryQuery = `INSERT INTO ${component}_history(foreignKey, patches) values($1, CAST ($2 AS JSON)) RETURNING *`
         try {
             let oldVersion = await this.getSingle(component, id, {}, {}, res)
             let oldHistory = await this.getSingleHistoryRaw(component, id)
@@ -761,8 +762,14 @@ class DB {
             let result = await this.db.query(updateQuery, queryData.dataArray)
             const dmp = new diff_match_patch()
             let diff = dmp.patch_make(JSON.stringify(result[0]), JSON.stringify(oldVersion[0]))
-            oldHistory[0].patches.push(dmp.patch_toText(diff))
-            let historyResult = await this.db.query(updateHistoryQuery, JSON.stringify(oldHistory[0].patches))
+            if (!oldHistory || oldHistory.length === 0){
+                let diffValues = [result[0].id, JSON.stringify([dmp.patch_toText(diff)])]
+                let historyResult = await this.db.query(insertHistoryQuery, diffValues)
+            }
+            else {
+                oldHistory[0].patches.push(dmp.patch_toText(diff))
+                let historyResult = await this.db.query(updateHistoryQuery, JSON.stringify(oldHistory[0].patches))
+            }
             return result;
         } catch (err) {
             console.error(err)
