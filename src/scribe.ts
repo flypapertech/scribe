@@ -5,6 +5,7 @@ import { diff_match_patch } from "diff-match-patch"
 import Axios from "axios"
 import mkdirp = require("mkdirp")
 import yargs = require("yargs")
+import * as urljoin from "url-join"
 import { DateTime } from "luxon"
 import { RedisClient } from "redis"
 const {promisify} = require("util")
@@ -60,7 +61,7 @@ const argv = yargs.env("SCRIBE_APP")
         default: 1
     })
     .option("schemaBaseUrl", {
-        default: "http://localhost:8080/"
+        default: "http://localhost:8080"
     }).argv
 
 interface Schemas {
@@ -419,7 +420,7 @@ class DB {
 
         // TODO should this fall back or error? If scribe can't contact the server then should we be allowing random data in?
         try {
-            const schemaUrl = `${argv.schemaBaseUrl}${component}/schema`
+            const schemaUrl = urljoin(argv.schemaBaseUrl, component, "schema")
             let response = await Axios.get(schemaUrl)
 
             if (response.data === undefined) {
@@ -574,54 +575,6 @@ class DB {
             }
             getQuery += " ORDER BY id"
             let filteredResponse: any[] = await this.db.query(getQuery)
-        // if (!query.where) {
-        //     getQuery += "WHERE "+ SqlString.escape(query.where)
-        // }
-        // try {
-        //     let response = await this.db.query(getQuery)
-        //     let filteredResponse = [] as any[]
-        //     if (!query.filter) {
-        //         filteredResponse = response
-        //     }
-        //     else {
-        //         let filter = query.filter
-        //         try {
-        //             filter = JSON.parse(filter)
-        //             for (let i = 0; i < response.length; i++) {
-        //                 let matchedFilters = 0
-        //                 let filterCount = Object.keys(filter).length
-        //                 for (let key in filter) {
-        //                     let entryValue = get(key, response[i])
-        //                     if (entryValue) {
-        //                         let filterArray: Array<any>
-        //                         if (filter[key] instanceof Array) {
-        //                             filterArray = filter[key] as Array<any>
-        //                         }
-        //                         else {
-        //                             filterArray = [filter[key]]
-        //                         }
-
-        //                         if (filterArray.find(x => JSON.stringify(x) === JSON.stringify(entryValue))) {
-        //                             matchedFilters++
-        //                         }
-        //                     }
-        //                     else {
-        //                         // if the object doesn't contain the filter key then ignore the filter
-        //                         matchedFilters++
-        //                     }
-        //                 }
-
-        //                 if (matchedFilters === filterCount) {
-        //                     filteredResponse.push(response[i])
-        //                 }
-        //             }
-        //         }
-        //         catch (err) {
-        //             console.error(err)
-        //             console.error("Failed to apply filter: ")
-        //             console.error(filter)
-        //         }
-        //     }
 
             if (query.timeMachine) {
                 let timeMachine = JSON.parse(query.timeMachine)
