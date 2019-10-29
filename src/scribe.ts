@@ -5,7 +5,7 @@ import { diff_match_patch } from "diff-match-patch"
 import Axios from "axios"
 import mkdirp = require("mkdirp")
 import yargs = require("yargs")
-import * as urljoin from "url-join"
+import urljoin = require("url-join")
 import { DateTime } from "luxon"
 import { RedisClient } from "redis"
 const {promisify} = require("util")
