@@ -558,10 +558,12 @@ class DB {
                     }
                     let filterString = keyParts.shift()
                     filterString = pgPromise.as.value(filterString)
-                    for(let i = 0; i < keyParts.length; i++) {
-                        filterString += `->>${pgPromise.as.text(keyParts[i])}`
+
+                    for (let i = 0; i < keyParts.length; i++) {
+                        const arrow = (i === keyParts.length - 1) ? "->>" : "->"
+                        filterString += `${arrow}${pgPromise.as.text(keyParts[i])}`
                     }
-                    const stringifiedfitlerArray = filterArray.map(x => {
+                    const stringifiedFilterArray = filterArray.map(x => {
                         if (typeof x !== "string") {
                             return `${pgPromise.as.json(x)}`
                         }
@@ -569,7 +571,7 @@ class DB {
                         return `${pgPromise.as.text(x)}`
                     })
 
-                    filters.push(`${filterString} IN (${stringifiedfitlerArray.join(",")})`)
+                    filters.push(`${filterString} IN (${stringifiedFilterArray.join(",")})`)
                 }
                 getQuery += " WHERE " + filters.join(" AND ")
             }
