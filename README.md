@@ -1,6 +1,8 @@
-# scribe
-Database modeling services.
+[![CircleCI](https://circleci.com/gh/flypapertech/scribe/tree/master.svg?style=svg)](https://circleci.com/gh/flypapertech/scribe/tree/master)
+[![Known Vulnerabilities](https://snyk.io/test/github/flypapertech/scribe/badge.svg)](https://snyk.io/test/github/flypapertech/scribe)
+[![npm (scoped)](https://img.shields.io/npm/v/@flypapertech/scribe.svg)](https://www.npmjs.com/package/@flypapertech/scribe)
+[![NpmLicense](https://img.shields.io/npm/l/@flypapertech/scribe.svg)](https://github.com/flypapertech/scribe/blob/master/LICENSE)
+[![dependencies Status](https://david-dm.org/flypapertech/scribe/status.svg)](https://david-dm.org/flypapertech/scribe)
 
-Notes:
-* Must be using Node v8 since [nodegit does not support Node v10 yet](https://github.com/nodegit/nodegit/issues/1490)
-* May need to run `sudo xcode-select --install` on macOS prior to install due to [issue with nodegit](https://github.com/nodegit/nodegit/issues/1134)
+# Scribe
+Database modeling services. Supports postgres >=9.6.10

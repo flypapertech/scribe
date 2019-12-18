@@ -1,8 +1,6 @@
 node_modules
 bower_components
 .vs
-.vscode
-.vs
 *.jsproj
 *.csproj
 *.sln
@@ -18,3 +16,4 @@ npm-debug*
 *bundle.*
 logs
 cache
+dist

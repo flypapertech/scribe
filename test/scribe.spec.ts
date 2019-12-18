@@ -1,211 +1,270 @@
-process.env.SCRIBE_APP_DB_NAME = "test"
-import {createServer} from "../src/scribe.cli"
-import * as mocha from "mocha"
+import { createServer } from "../src/scribe"
 import * as chai from "chai"
-import * as chaiHttp from "chai-http"
-let should = chai.should()
-let baseEndPoint = "http://localhost:1337"
-let server;
+import { expect, assert } from "chai"
+import chaiHttp = require("chai-http")
+import mocha = require("mocha");
+import { Server } from "net";
+import { DateTime } from "luxon"
 
-const schema = require(__dirname + "/../src/default.table.schema.json")
 chai.use(chaiHttp)
 
-mocha.before(function(done) {
-    server = createServer(schema)
-    done()
+let baseEndPoint = "http://localhost:1337"
+let server: Server
+
+const schema = require(__dirname + "/../src/default.table.schema.json")
+const now = DateTime.utc()
+const created = now.minus({days: 1}).toISO()
+const modified = now.toISO()
+
+
+mocha.before(function(done: any) {
+    createServer(schema).then(scribeServer => {
+        server = scribeServer
+        done()
+    })
 })
-mocha.after(function(done) {
+
+mocha.after(function(done: any) {
     server.close()
     done()
 })
 
-mocha.describe("scribe", function() {
-    mocha.it("Checks that server is running", function(done) {
+mocha.describe("Scribe", function() {
+    mocha.it("Checks that server is running", function(done: any) {
         chai.request(baseEndPoint)
-            .get("/v0")
-            .end((err,res) => {
-                res.should.have.status(200)
+            .get("/")
+            .end((err, res) => {
+                assert.equal(res.status, 200)
                 done()
             })
     })
 
-    mocha.it("DEL component table", function(done) {
+    mocha.it("DEL component table", function(done: any) {
         chai.request(baseEndPoint)
-            .delete("/v0/testComponent")
-            .end((err,res) => {
-                res.should.have.status(200)
-                res.body.should.be.eql([])
+            .del("/testComponent")
+            .end((err, res) => {
+                assert.equal(res.status, 200)
+                expect(res.body).to.eql([])
                 done()
             })
     })
 
-    mocha.it("POST to component", function(done) {
-        var request = {
+    mocha.it("DEL subcomponent table", function(done: any) {
+        chai.request(baseEndPoint)
+            .del("/testComponent/sub")
+            .end((err, res) => {
+                assert.equal(res.status, 200)
+                expect(res.body).to.eql([])
+                done()
+            })
+    })
+
+    mocha.it("POST to component", function(done: any) {
+        let request = {
             "data": {
                 "something": "somethingstring"
             },
-            "date_created": "2017-06-22T17:57:32Z",
-            "date_modified": "2018-06-22T17:57:32Z",
+            "date_created": created,
+            "date_modified": modified,
             "created_by": 2,
             "modified_by": 2
         }
 
-        var expectedResponse = [
+        let expectedResponse = [
             {
                 "id": 1,
                 "data": {
                     "something": "somethingstring"
                 },
-                "date_created": "2017-06-22T21:57:32.000Z",
-                "date_modified": "2018-06-22T21:57:32.000Z",
+                "date_created": created,
+                "date_modified": modified,
                 "created_by": 2,
                 "modified_by": 2
             }
         ]
 
         chai.request(baseEndPoint)
-            .post("/v0/testComponent")
+            .post("/testComponent")
             .send(request)
             .end((err, res) => {
-                res.body.should.be.eql(expectedResponse)
+                assert.deepEqual(res.body, expectedResponse)
                 done()
             })
     })
 
-    mocha.it("GET all entries", function(done) {
-        var expectedResponse = [
+    mocha.it("GET all entries", function(done: any) {
+        let expectedResponse = [
             {
                 "id": 1,
                 "data": {
                     "something": "somethingstring"
                 },
-                "date_created": "2017-06-22T21:57:32.000Z",
-                "date_modified": "2018-06-22T21:57:32.000Z",
+                "date_created": created,
+                "date_modified": modified,
                 "created_by": 2,
                 "modified_by": 2
             }
         ]
         chai.request(baseEndPoint)
-            .get("/v0/testComponent/all")
-            .end((err,res) => {
-                res.should.have.status(200)
-                res.body.should.be.eql(expectedResponse)
+            .get("/testComponent/all")
+            .end((err, res) => {
+                assert.deepEqual(res.body, expectedResponse)
                 done()
             })
     })
 
-    mocha.it("PUT entry", function(done){
-        var request = {
+    mocha.it("GET all entries with query filter", function(done: any) {
+        let expectedResponse = [
+            {
+                "id": 1,
+                "data": {
+                    "something": "somethingstring"
+                },
+                "date_created": created,
+                "date_modified": modified,
+                "created_by": 2,
+                "modified_by": 2
+            }
+        ]
+        chai.request(baseEndPoint)
+            .get("/testComponent/all")
+            .query({filter: {"created_by": [2]}})
+            .end((err, res) => {
+                assert.deepEqual(res.body, expectedResponse)
+                done()
+            })
+    })
+
+    mocha.it("GET all entries with query filter expect none", function(done: any) {
+        let expectedResponse:any[] = []
+        chai.request(baseEndPoint)
+            .get("/testComponent/all")
+            .send({filter: {"created_by": [3]}})
+            .end((err, res) => {
+                assert.deepEqual(res.body, expectedResponse)
+                done()
+            })
+    })
+
+    mocha.it("GET all entries with body filter", function(done: any) {
+        let expectedResponse = [
+            {
+                "id": 1,
+                "data": {
+                    "something": "somethingstring"
+                },
+                "date_created": created,
+                "date_modified": modified,
+                "created_by": 2,
+                "modified_by": 2
+            }
+        ]
+        chai.request(baseEndPoint)
+            .get("/testComponent/all")
+            .send({filter: {"created_by": [2]}})
+            .end((err, res) => {
+                assert.deepEqual(res.body, expectedResponse)
+                done()
+            })
+    })
+
+    mocha.it("GET all entries with body filter expect none", function(done: any) {
+        let expectedResponse:any[] = []
+        chai.request(baseEndPoint)
+            .get("/testComponent/all")
+            .query({filter: {"created_by": [3]}})
+            .end((err, res) => {
+                assert.deepEqual(res.body, expectedResponse)
+                done()
+            })
+    })
+
+    mocha.it("GET from table that doesn't exist should return empty array", function(done: any) {
+        const expectedResponse: any[] = []
+        chai.request(baseEndPoint)
+            .get("/someTableThatDoesntExist/all")
+            .end((err, res) => {
+                assert.deepEqual(res.body, expectedResponse)
+                done()
+            })
+    })
+
+    mocha.it("PUT entry", function(done: any) {
+        let request = {
             "data": {
                 "something": "we changed this",
                 "data2": "new thing"
             },
-            "date_created": "2017-06-22T17:57:32Z",
-            "date_modified": "2018-06-22T17:57:32Z",
+            "date_created": created,
+            "date_modified": modified,
             "created_by": 2,
             "modified_by": 2
         }
 
-        var expectedResponse = [
+        let expectedResponse = [
             {
                 "id": 1,
                 "data": {
                     "something": "we changed this",
                     "data2": "new thing"
                 },
-                "date_created": "2017-06-22T21:57:32.000Z",
-                "date_modified": "2018-06-22T21:57:32.000Z",
+                "date_created": created,
+                "date_modified": modified,
                 "created_by": 2,
                 "modified_by": 2
             }
         ]
 
         chai.request(baseEndPoint)
-            .put("/v0/testComponent/1")
+            .put("/testComponent/1")
             .send(request)
             .end((err, res) => {
-                res.body.should.be.eql(expectedResponse)
+                assert.deepEqual(res.body, expectedResponse)
                 done()
         })
     })
 
-    mocha.it("GET all history", function(done){
-        var expectedResponse = [
-            {
-                "id": 1,
-                "history": [
-                    {
-                        "id": 1,
-                        "data": {
-                            "something": "we changed this",
-                            "data2": "new thing"
-                        },
-                        "date_created": "2017-06-22T21:57:32.000Z",
-                        "date_modified": "2018-06-22T21:57:32.000Z",
-                        "created_by": 2,
-                        "modified_by": 2
-                    },
-                    {
-                        "id": 1,
-                        "data": {
-                            "something": "somethingstring"
-                        },
-                        "date_created": "2017-06-22T21:57:32.000Z",
-                        "date_modified": "2018-06-22T21:57:32.000Z",
-                        "created_by": 2,
-                        "modified_by": 2
-                    }
-                ]
+
+    mocha.it("PUT with schema change", function(done: any) {
+        server.close(async () =>  {
+            let newSchema = schema
+            newSchema.required.push("new_column")
+            newSchema.properties["new_column"] = {
+                "type": "string"
             }
-        ]
 
-        chai.request(baseEndPoint)
-            .get("/v0/testComponent/all/history")
-            .end((err, res) => {
-                res.body.should.be.eql(expectedResponse)
-                done()
-        })
-    })
-
-    mocha.it("PUT with schema change", function(done){
-        server.close()
-        let newSchema = schema
-        newSchema.required.push("new_column")
-        newSchema.properties["new_column"]= {
-            "type": "string"
-        }
-
-        server = createServer(newSchema)
-        var request = {
-            "data": {
-                "something": "somethingstring"
-            },
-            "date_created": "2017-06-22T17:57:32Z",
-            "date_modified": "2018-06-22T17:57:32Z",
-            "created_by": 2,
-            "modified_by": 2,
-            "new_column": "woot"
-        }
-        var expectedResponse = [
-            {
-                "id": 1,
+            server = await createServer(newSchema)
+            let request = {
                 "data": {
                     "something": "somethingstring"
                 },
-                "date_created": "2017-06-22T21:57:32.000Z",
-                "date_modified": "2018-06-22T21:57:32.000Z",
+                "date_created": created,
+                "date_modified": modified,
                 "created_by": 2,
                 "modified_by": 2,
-                "new_column": "\"woot\""
+                "new_column": "woot"
             }
-        ]
+            let expectedResponse = [
+                {
+                    "id": 1,
+                    "data": {
+                        "something": "somethingstring"
+                    },
+                    "date_created": created,
+                    "date_modified": modified,
+                    "created_by": 2,
+                    "modified_by": 2,
+                    "new_column": "\"woot\""
+                }
+            ]
 
-        chai.request(baseEndPoint)
-            .put("/v0/testComponent/1")
-            .send(request)
-            .end((err, res) => {
-                res.body.should.be.eql(expectedResponse)
-                done()
+            chai.request(baseEndPoint)
+                .put("/testComponent/1")
+                .send(request)
+                .end((err, res) => {
+                    assert.deepEqual(res.body, expectedResponse)
+                    done()
+            })
         })
     })
 })
