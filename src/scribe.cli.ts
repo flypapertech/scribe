@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import * as cluster from "cluster"
 import * as os from "os"
 import { createServer } from "./scribe"
