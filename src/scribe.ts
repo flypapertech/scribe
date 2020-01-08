@@ -73,24 +73,26 @@ interface ComponentSchema {
     validator: Ajv.ValidateFunction
 }
 
-export async function createServer(schemaOverride: any = undefined) {
-    const dbCreateConfig = {
-        user: argv.dbUser,
-        password: argv.dbPass,
-        port: argv.dbPort,
-        host: argv.dbHost
-    }
+const dbCreateConfig = {
+    user: argv.dbUser,
+    password: argv.dbPass,
+    port: argv.dbPort,
+    host: argv.dbHost
+}
 
+export async function tryCreateDb() {
     try {
         let res = await pgtools.createdb(dbCreateConfig, argv.dbName)
         console.log(res)
     }
     catch (err) {
         if (err.pgErr === undefined || err.pgErr.code !== "42P04") {
-            console.error(err)
+            throw err
         }
     }
+}
 
+export async function createServer(schemaOverride: any = undefined) {
     const dbConnectConfig = Object.assign({}, dbCreateConfig, { database: argv.dbName })
     const pgp: pgPromise.IMain = pgPromise({})
     const postgresDb: pgPromise.IDatabase<{}> =  pgp(dbConnectConfig)
