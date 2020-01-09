@@ -1,4 +1,4 @@
-import { createServer } from "../src/scribe"
+import { createServer, tryCreateDb } from "../src/scribe"
 import * as chai from "chai"
 import { expect, assert } from "chai"
 import chaiHttp = require("chai-http")
@@ -18,9 +18,15 @@ const modified = now.toISO()
 
 
 mocha.before(function(done: any) {
-    createServer(schema).then(scribeServer => {
-        server = scribeServer
-        done()
+    tryCreateDb().then(() => {
+        createServer(schema).then(scribeServer => {
+            server = scribeServer
+            done()
+        }).catch(error => {
+            done(error)
+        })
+    }).catch(error => {
+        done(error)
     })
 })
 
