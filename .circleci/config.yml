@@ -27,7 +27,7 @@ aliases:
       - v1-dependencies-{{ checksum "package.json" }}
       - v1-dependencies-
   - &step-install
-    run: yarn install
+    run: npm install
   - &step-save-cache
     save_cache:
       paths:
