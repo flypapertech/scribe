@@ -52,7 +52,7 @@ build-node-common: &common-build
     - *step-save-cache
     - run:
         name: Testing
-        command: yarn test
+        command: npm test
         environment:
           SCRIBE_APP_DB_USER: postgres
           SCRIBE_APP_DB_NAME: test
@@ -68,7 +68,7 @@ jobs:
       - *step-restore-cache
       - *step-install
       - *step-save-cache
-      - run: yarn build
+      - run: npm run build
       - run:
           name: Authenticate with registry
           command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/repo/.npmrc
