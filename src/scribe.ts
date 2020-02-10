@@ -487,7 +487,7 @@ class DB {
                         break;
 
                     case "object":
-                        queryData.sqlColumnSchemas.push(`${key} json`)
+                        queryData.sqlColumnSchemas.push(`${key} jsonb`)
                         break;
 
                     case "number":
