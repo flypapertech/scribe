@@ -68,7 +68,8 @@ mocha.describe("Scribe", function() {
     mocha.it("POST to component", function(done: any) {
         let request = {
             "data": {
-                "something": "somethingstring"
+                "something": "somethingstring",
+                "ids": [1, 3, 5]
             },
             "date_created": created,
             "date_modified": modified,
@@ -80,7 +81,8 @@ mocha.describe("Scribe", function() {
             {
                 "id": 1,
                 "data": {
-                    "something": "somethingstring"
+                    "something": "somethingstring",
+                    "ids": [1, 3, 5]
                 },
                 "date_created": created,
                 "date_modified": modified,
@@ -103,7 +105,8 @@ mocha.describe("Scribe", function() {
             {
                 "id": 1,
                 "data": {
-                    "something": "somethingstring"
+                    "something": "somethingstring",
+                    "ids": [1, 3, 5]
                 },
                 "date_created": created,
                 "date_modified": modified,
@@ -124,7 +127,8 @@ mocha.describe("Scribe", function() {
             {
                 "id": 1,
                 "data": {
-                    "something": "somethingstring"
+                    "something": "somethingstring",
+                    "ids": [1, 3, 5]
                 },
                 "date_created": created,
                 "date_modified": modified,
@@ -141,12 +145,13 @@ mocha.describe("Scribe", function() {
             })
     })
 
-    mocha.it("GET all entries with query where", function(done: any) {
+    mocha.it("GET all entries with query filter2 is one of", function(done: any) {
         let expectedResponse = [
             {
                 "id": 1,
                 "data": {
-                    "something": "somethingstring"
+                    "something": "somethingstring",
+                    "ids": [1, 3, 5]
                 },
                 "date_created": created,
                 "date_modified": modified,
@@ -156,7 +161,53 @@ mocha.describe("Scribe", function() {
         ]
         chai.request(baseEndPoint)
             .get("/testComponent/all")
-            .query({where: ["created_by IN (2)"]})
+            .query({filter2: {"id": ["is one of", [1]]}})
+            .end((err, res) => {
+                assert.deepEqual(res.body, expectedResponse)
+                done()
+            })
+    })
+
+    mocha.it("GET all entries with query filter2 is one of nested", function(done: any) {
+        let expectedResponse = [
+            {
+                "id": 1,
+                "data": {
+                    "something": "somethingstring",
+                    "ids": [1, 3, 5]
+                },
+                "date_created": created,
+                "date_modified": modified,
+                "created_by": 2,
+                "modified_by": 2
+            }
+        ]
+        chai.request(baseEndPoint)
+            .get("/testComponent/all")
+            .query({filter2: {"data.something": ["is one of", "somethingstring"]}})
+            .end((err, res) => {
+                assert.deepEqual(res.body, expectedResponse)
+                done()
+            })
+    })
+
+    mocha.it("GET all entries with query filter2 contains", function(done: any) {
+        let expectedResponse = [
+            {
+                "id": 1,
+                "data": {
+                    "something": "somethingstring",
+                    "ids": [1, 3, 5]
+                },
+                "date_created": created,
+                "date_modified": modified,
+                "created_by": 2,
+                "modified_by": 2
+            }
+        ]
+        chai.request(baseEndPoint)
+            .get("/testComponent/all")
+            .query({filter2: {"data.ids": ["contains", [3]]}})
             .end((err, res) => {
                 assert.deepEqual(res.body, expectedResponse)
                 done()
@@ -179,7 +230,8 @@ mocha.describe("Scribe", function() {
             {
                 "id": 1,
                 "data": {
-                    "something": "somethingstring"
+                    "something": "somethingstring",
+                    "ids": [1, 3, 5]
                 },
                 "date_created": created,
                 "date_modified": modified,
@@ -190,6 +242,29 @@ mocha.describe("Scribe", function() {
         chai.request(baseEndPoint)
             .get("/testComponent/all")
             .send({filter: {"created_by": [2]}})
+            .end((err, res) => {
+                assert.deepEqual(res.body, expectedResponse)
+                done()
+            })
+    })
+
+    mocha.it("GET all entries with body filter nested", function(done: any) {
+        let expectedResponse = [
+            {
+                "id": 1,
+                "data": {
+                    "something": "somethingstring",
+                    "ids": [1, 3, 5]
+                },
+                "date_created": created,
+                "date_modified": modified,
+                "created_by": 2,
+                "modified_by": 2
+            }
+        ]
+        chai.request(baseEndPoint)
+            .get("/testComponent/all")
+            .send({filter: {"data.something": "somethingstring"}})
             .end((err, res) => {
                 assert.deepEqual(res.body, expectedResponse)
                 done()
@@ -221,6 +296,7 @@ mocha.describe("Scribe", function() {
         let request = {
             "data": {
                 "something": "we changed this",
+                "ids": [1, 3, 5],
                 "data2": "new thing"
             },
             "date_created": created,
@@ -234,6 +310,7 @@ mocha.describe("Scribe", function() {
                 "id": 1,
                 "data": {
                     "something": "we changed this",
+                    "ids": [1, 3, 5],
                     "data2": "new thing"
                 },
                 "date_created": created,
@@ -264,7 +341,8 @@ mocha.describe("Scribe", function() {
             server = await createServer(newSchema)
             let request = {
                 "data": {
-                    "something": "somethingstring"
+                    "something": "somethingstring",
+                    "ids": [1, 3, 5]
                 },
                 "date_created": created,
                 "date_modified": modified,
@@ -276,7 +354,8 @@ mocha.describe("Scribe", function() {
                 {
                     "id": 1,
                     "data": {
-                        "something": "somethingstring"
+                        "something": "somethingstring",
+                        "ids": [1, 3, 5]
                     },
                     "date_created": created,
                     "date_modified": modified,

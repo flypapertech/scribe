@@ -535,23 +535,57 @@ class DB {
         }
     }
     public async getAll(component: string, query: any, body: any, res: express.Response) {
-        try{
+        try {
             let getQuery = `SELECT * FROM ${component}`
             const userFilter = (query.filter) ? query.filter : body.filter
-            const userWhere = (query.where) ? query.where : body.where
-            const where: string[] = []
-            if (userWhere) {
-                if (!Array.isArray(userWhere)) {
-                    where.push(pgPromise.as.value(userWhere))
-                }
-                else {
-                    where.push(...userWhere.map(x => {
-                        return pgPromise.as.value(x)
-                    }))
-                }
+            const userFilter2 = (query.filter2) ? query.filter2 : body.filter2
+            const filter2: string[] = []
+            if (userFilter2) {
+                for (const filterKey of Object.keys(userFilter2)) {
+                    const queryParts = userFilter2[filterKey]
+                    if (!Array.isArray(queryParts) || queryParts.length !== 2) {
+                        res.sendStatus(400)
+                        return
+                    }
+                    const [operator, value] = queryParts
+                    if (typeof operator !== "string") {
+                        res.sendStatus(400)
+                        return
+                    }
 
-                console.log("+++++++++WHERE++++++++++")
-                console.log(where)
+                    const keyParts = filterKey.split(".")
+                    let columnIdentifier = keyParts.shift()
+                    for (let i = 0; i < keyParts.length; i++) {
+                        columnIdentifier += `->${pgPromise.as.text(keyParts[i])}`
+                    }
+
+                    let filterValue
+                    try {
+                        filterValue = JSON.parse(value)
+                    }
+                    catch (error) {
+                        filterValue = value
+                    }
+                    if (operator === "contains") {
+                        if (!Array.isArray(filterValue)) {
+                            filterValue = [filterValue]
+                        }
+                        filter2.push(pgPromise.as.format("$1:raw @> $2:json", [columnIdentifier, filterValue]))
+                    }
+                    else if (operator === "is one of") {
+                        if (!Array.isArray(filterValue)) {
+                            filterValue = filterValue
+                        }
+                        else {
+                            filterValue = filterValue.join(",")
+                        }
+                        filter2.push(pgPromise.as.format("$1:raw IN ($2:json)", [columnIdentifier, filterValue]))
+                    }
+                    else {
+                        res.sendStatus(400)
+                        return
+                    }
+                }
             }
 
             let rawFilter = undefined
@@ -593,8 +627,8 @@ class DB {
                 }
             }
 
-            if (filters.length > 0 || where.length > 0) {
-                getQuery += " WHERE " + [...filters, ...where].join(" AND ")
+            if (filters.length > 0 || filter2.length > 0) {
+                getQuery += " WHERE " + [...filters, ...filter2].join(" AND ")
             }
 
             console.log(getQuery)
@@ -735,6 +769,10 @@ class DB {
         let insertHistoryQuery = `INSERT INTO ${component}_history(foreignKey, patches) values($1, CAST ($2 AS JSON)) RETURNING *`
         try {
             let oldVersion = await this.getSingle(component, id, {}, {}, res)
+            if (!oldVersion) {
+                res.sendStatus(500)
+                return
+            }
             let oldHistory = await this.getSingleHistoryRaw(component, id)
             await this.db.query(ensureAllColumnsExistQuery)
             let result = await this.db.query(updateQuery, queryData.dataArray)
