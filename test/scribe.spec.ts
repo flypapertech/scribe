@@ -141,6 +141,28 @@ mocha.describe("Scribe", function() {
             })
     })
 
+    mocha.it("GET all entries with query where", function(done: any) {
+        let expectedResponse = [
+            {
+                "id": 1,
+                "data": {
+                    "something": "somethingstring"
+                },
+                "date_created": created,
+                "date_modified": modified,
+                "created_by": 2,
+                "modified_by": 2
+            }
+        ]
+        chai.request(baseEndPoint)
+            .get("/testComponent/all")
+            .query({where: ["created_by IN (2)"]})
+            .end((err, res) => {
+                assert.deepEqual(res.body, expectedResponse)
+                done()
+            })
+    })
+
     mocha.it("GET all entries with query filter expect none", function(done: any) {
         let expectedResponse:any[] = []
         chai.request(baseEndPoint)

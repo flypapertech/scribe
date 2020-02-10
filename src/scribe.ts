@@ -537,26 +537,42 @@ class DB {
     public async getAll(component: string, query: any, body: any, res: express.Response) {
         try{
             let getQuery = `SELECT * FROM ${component}`
-            const filters: string[] = []
             const userFilter = (query.filter) ? query.filter : body.filter
-            let filter = undefined
-            try {
-                filter = (typeof userFilter === "string") ? JSON.parse(userFilter) : userFilter
+            const userWhere = (query.where) ? query.where : body.where
+            const where: string[] = []
+            if (userWhere) {
+                if (!Array.isArray(userWhere)) {
+                    where.push(pgPromise.as.value(userWhere))
+                }
+                else {
+                    where.push(...userWhere.map(x => {
+                        return pgPromise.as.value(x)
+                    }))
+                }
+
+                console.log("+++++++++WHERE++++++++++")
+                console.log(where)
             }
-            catch(error) {
+
+            let rawFilter = undefined
+            try {
+                rawFilter = (typeof userFilter === "string") ? JSON.parse(userFilter) : userFilter
+            }
+            catch (error) {
                 res.status(400)
                 return "Failed to parse filter"
             }
 
-            if (userFilter) {
-                for (let key in filter) {
+            const filters: string[] = []
+            if (rawFilter) {
+                for (let key in rawFilter) {
                     const keyParts = key.split(".")
                     let filterArray: Array<any>
-                    if (filter[key] instanceof Array) {
-                        filterArray = filter[key] as Array<any>
+                    if (rawFilter[key] instanceof Array) {
+                        filterArray = rawFilter[key] as Array<any>
                     }
                     else {
-                        filterArray = [filter[key]]
+                        filterArray = [rawFilter[key]]
                     }
                     let filterString = keyParts.shift()
                     filterString = pgPromise.as.value(filterString)
@@ -575,8 +591,13 @@ class DB {
 
                     filters.push(`${filterString} IN (${stringifiedFilterArray.join(",")})`)
                 }
-                getQuery += " WHERE " + filters.join(" AND ")
             }
+
+            if (filters.length > 0 || where.length > 0) {
+                getQuery += " WHERE " + [...filters, ...where].join(" AND ")
+            }
+
+            console.log(getQuery)
             getQuery += " ORDER BY id"
             let filteredResponse: any[] = await this.db.query(getQuery)
 
