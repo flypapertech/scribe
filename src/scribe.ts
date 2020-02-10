@@ -631,7 +631,6 @@ class DB {
                 getQuery += " WHERE " + [...filters, ...filter2].join(" AND ")
             }
 
-            console.log(getQuery)
             getQuery += " ORDER BY id"
             let filteredResponse: any[] = await this.db.query(getQuery)
 
