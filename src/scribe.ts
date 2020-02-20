@@ -201,7 +201,7 @@ export async function createServer(schemaOverride: any = undefined) {
 
     scribe.get("/:component/:subcomponent/:id", (req, res, next) => {
         // get id
-        db.getSingle(`${req.params.component}_${req.params.subcomponent}`, req.params.id, {}, {}, res).then(result => {
+        db.getSingle(`${req.params.component}_${req.params.subcomponent}`, req.params.id, req.query, req.body || {}, res).then(result => {
             res.send(result)
         })
         // fail if component doesn't exist
@@ -210,7 +210,7 @@ export async function createServer(schemaOverride: any = undefined) {
 
     scribe.get("/:component/:id", (req, res, next) => {
         // get id
-        db.getSingle(req.params.component, req.params.id, {}, {}, res).then(result => {
+        db.getSingle(req.params.component, req.params.id, req.query, req.body || {}, res).then(result => {
             res.send(result)
         })
         // fail if component doesn't exist
@@ -634,8 +634,9 @@ class DB {
             getQuery += " ORDER BY id"
             let filteredResponse: any[] = await this.db.query(getQuery)
 
-            if (query.timeMachine) {
-                let timeMachine = JSON.parse(query.timeMachine)
+            const timeMachineQuery = (query.timeMachine) ? query.timeMachine : body.timeMachine
+            if (timeMachineQuery) {
+                const timeMachine = JSON.parse(timeMachineQuery)
                 if (timeMachine.key && timeMachine.timestamp) {
                     let allHistory = await this.getAllHistory(component, filteredResponse, res)
                     if (typeof allHistory !== "string") {
@@ -655,7 +656,7 @@ class DB {
                                             return historyAtTime
                                         }
                                     }
-                
+
                                     return historyEntry
                                 }
                             }, undefined as any | undefined)
