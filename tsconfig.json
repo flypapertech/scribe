@@ -1,11 +1,13 @@
 {
    "compilerOptions": {
        "strict": true,
-       "target": "es6",
+       "target": "es2019",
        "module": "commonjs",
        "moduleResolution": "node",
        "removeComments": true,
        "outDir": "dist",
+       "allowSyntheticDefaultImports": true,
+       "lib": ["es2020"]
    },
    "files": [
        "./src/scribe.cli.ts"

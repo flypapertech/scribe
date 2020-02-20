@@ -1,14 +1,14 @@
-import pgPromise = require("pg-promise")
-import express = require("express")
-import Ajv = require("ajv")
+import * as pgPromise from "pg-promise"
+import * as express from "express"
+import * as Ajv from "ajv"
 import { diff_match_patch } from "diff-match-patch"
 import Axios from "axios"
-import mkdirp = require("mkdirp")
-import yargs = require("yargs")
-import urljoin = require("url-join")
+import * as mkdirp from "mkdirp"
+import * as yargs from "yargs"
 import { DateTime } from "luxon"
 import { RedisClient } from "redis"
 const {promisify} = require("util")
+const urljoin = require("url-join")
 
 
 const pgtools = require("pgtools")
