@@ -1,5 +1,26 @@
 {
-    "files.trimFinalNewlines": true,
-    "files.insertFinalNewline": true,
-    "tslint.autoFixOnSave": true
+  "files.trimFinalNewlines": true,
+  "files.insertFinalNewline": true,
+  // ESLint
+  "eslint.options": {
+    "configFile": ".eslintrc.json"
+  },
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": true,
+    "eslint.format.enable": true
+  },
+  // Code Formatting (ESLINT/MARKDOWNLINT/PRETTIER)
+  "[typescript]": {
+    "editor.formatOnSave": false
+  },
+  "[javascript]": {
+    "editor.formatOnSave": false
+  }
 }
