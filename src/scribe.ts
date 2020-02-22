@@ -570,6 +570,9 @@ class DB {
                         if (!Array.isArray(filterValue)) {
                             filterValue = [filterValue]
                         }
+                        // if filter is an empty array the query will return nothing
+                        // short circuiting and returning empty array premetively
+                        if (filterValue.length === 0) return []
                         filter2.push(pgPromise.as.format("$1:raw @> $2:json", [columnIdentifier, filterValue]))
                     }
                     else if (operator === "is one of") {
@@ -577,6 +580,9 @@ class DB {
                             filterValue = filterValue
                         }
                         else {
+                            // if filter is an empty array the query will return nothing
+                            // short circuiting and returning empty array premetively
+                            if (filterValue.length === 0) return []
                             filterValue = filterValue.join(",")
                         }
                         filter2.push(pgPromise.as.format("$1:raw IN ($2:json)", [columnIdentifier, filterValue]))
@@ -615,6 +621,10 @@ class DB {
                         const arrow = (i === keyParts.length - 1) ? "->>" : "->"
                         filterString += `${arrow}${pgPromise.as.text(keyParts[i])}`
                     }
+
+                    // if filter is an empty array the query will return nothing
+                    // short circuiting and returning empty array premetively
+                    if (filterArray.length === 0) return []
                     const stringifiedFilterArray = filterArray.map(x => {
                         if (typeof x !== "string") {
                             return `${pgPromise.as.json(x)}`
