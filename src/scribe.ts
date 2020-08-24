@@ -191,6 +191,18 @@ export async function createServer(schemaOverride: any = undefined): Promise<Ser
         // send response success or fail
     })
 
+    scribe.get("/:component/:id/history", (req, res, next) => {
+        db.getSingleHistory(req.params.component, req.params.id, res).then((result) => {
+            res.send(result)
+        })
+    })
+
+    scribe.get("/:component/:subcomponent/:id/history", (req, res, next) => {
+        db.getSingleHistory(`${req.params.component}_${req.params.subcomponent}`, req.params.id, res).then((result) => {
+            res.send(result)
+        })
+    })
+
     scribe.get("/:component/:subcomponent/all", express.json(), (req, res, next) => {
         // get all
         db.getAll(`${req.params.component}_${req.params.subcomponent}`, req.query, req.body, res).then((result) => {
