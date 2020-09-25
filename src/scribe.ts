@@ -656,7 +656,13 @@ class DB {
             const timeMachineQuery = query.timeMachine ? query.timeMachine : body.timeMachine
 
             if (timeMachineQuery) {
-                const timeMachine = JSON.parse(timeMachineQuery)
+                let timeMachine: any
+                try {
+                    timeMachine = JSON.parse(timeMachineQuery)
+                } catch (error) {
+                    timeMachine = timeMachineQuery
+                }
+
                 if (timeMachine.key && timeMachine.timestamp) {
                     const allHistory = await this.getAllHistory(component, filteredResponse, res)
 
