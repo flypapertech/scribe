@@ -555,102 +555,107 @@ class DB {
             return []
         }
     }
-    public async getAll(component: string, query: any, body: any, res: express.Response) {
+    public async getAll(component: string, query: any, body: any, res: express.Response, parentQuery?: string) {
         try {
             let getQuery = `SELECT * FROM ${component}`
-            const userFilter = query.filter ? query.filter : body.filter
-            const userFilter2 = query.filter2 ? query.filter2 : body.filter2
-            const filter2: string[] = []
-            if (userFilter2) {
-                for (const filterKey of Object.keys(userFilter2)) {
-                    const queryParts = userFilter2[filterKey]
-                    if (!Array.isArray(queryParts) || queryParts.length !== 2) {
-                        res.sendStatus(400)
-                        return
-                    }
+            if (!parentQuery) {
+                const userFilter = query.filter ? query.filter : body.filter
+                const userFilter2 = query.filter2 ? query.filter2 : body.filter2
+                const filter2: string[] = []
+                if (userFilter2) {
+                    for (const filterKey of Object.keys(userFilter2)) {
+                        const queryParts = userFilter2[filterKey]
+                        if (!Array.isArray(queryParts) || queryParts.length !== 2) {
+                            res.sendStatus(400)
+                            return
+                        }
 
-                    const [operator, value] = queryParts
-                    if (typeof operator !== "string") {
-                        res.sendStatus(400)
-                        return
-                    }
+                        const [operator, value] = queryParts
+                        if (typeof operator !== "string") {
+                            res.sendStatus(400)
+                            return
+                        }
 
-                    const keyParts = filterKey.split(".")
-                    let columnIdentifier = keyParts.shift()
-                    for (let i = 0; i < keyParts.length; i++) columnIdentifier += `->${pgPromise.as.text(keyParts[i])}`
+                        const keyParts = filterKey.split(".")
+                        let columnIdentifier = keyParts.shift()
+                        for (let i = 0; i < keyParts.length; i++) columnIdentifier += `->${pgPromise.as.text(keyParts[i])}`
 
-                    let filterValue
-                    try {
-                        filterValue = JSON.parse(value)
-                    } catch (error) {
-                        filterValue = value
-                    }
+                        let filterValue
+                        try {
+                            filterValue = JSON.parse(value)
+                        } catch (error) {
+                            filterValue = value
+                        }
 
-                    if (operator === "contains") {
-                        if (!Array.isArray(filterValue)) filterValue = [filterValue]
+                        if (operator === "contains") {
+                            if (!Array.isArray(filterValue)) filterValue = [filterValue]
 
-                        // if filter is an empty array the query will return nothing
-                        // short circuiting and returning empty array premetively
-                        if (filterValue.length === 0) return []
-                        filter2.push(pgPromise.as.format("$1:raw @> $2:json", [columnIdentifier, filterValue]))
-                    } else if (operator === "is one of") {
-                        if (!Array.isArray(filterValue)) {
-                            filterValue = filterValue
-                        } else {
                             // if filter is an empty array the query will return nothing
                             // short circuiting and returning empty array premetively
                             if (filterValue.length === 0) return []
-                            filterValue = filterValue.join(",")
+                            filter2.push(pgPromise.as.format("$1:raw @> $2:json", [columnIdentifier, filterValue]))
+                        } else if (operator === "is one of") {
+                            if (!Array.isArray(filterValue)) {
+                                filterValue = filterValue
+                            } else {
+                                // if filter is an empty array the query will return nothing
+                                // short circuiting and returning empty array premetively
+                                if (filterValue.length === 0) return []
+                                filterValue = filterValue.join(",")
+                            }
+
+                            filter2.push(pgPromise.as.format("$1:raw IN ($2:json)", [columnIdentifier, filterValue]))
+                        } else {
+                            res.sendStatus(400)
+                            return
+                        }
+                    }
+                }
+
+                let rawFilter = undefined
+                try {
+                    rawFilter = typeof userFilter === "string" ? JSON.parse(userFilter) : userFilter
+                } catch (error) {
+                    res.status(400)
+                    return "Failed to parse filter"
+                }
+
+                const filters: string[] = []
+                if (rawFilter) {
+                    for (const key of Object.keys(rawFilter)) {
+                        const keyParts = key.split(".")
+                        let filterArray: Array<any>
+                        if (rawFilter[key] instanceof Array) filterArray = rawFilter[key] as Array<any>
+                        else filterArray = [rawFilter[key]]
+
+                        let filterString = keyParts.shift()
+                        filterString = pgPromise.as.value(filterString)
+
+                        for (let i = 0; i < keyParts.length; i++) {
+                            const arrow = i === keyParts.length - 1 ? "->>" : "->"
+                            filterString += `${arrow}${pgPromise.as.text(keyParts[i])}`
                         }
 
-                        filter2.push(pgPromise.as.format("$1:raw IN ($2:json)", [columnIdentifier, filterValue]))
-                    } else {
-                        res.sendStatus(400)
-                        return
+                        // if filter is an empty array the query will return nothing
+                        // short circuiting and returning empty array premetively
+                        if (filterArray.length === 0) return []
+                        const stringifiedFilterArray = filterArray.map((x) => {
+                            if (typeof x !== "string") return `${pgPromise.as.json(x)}`
+
+                            return `${pgPromise.as.text(x)}`
+                        })
+
+                        filters.push(`${filterString} IN (${stringifiedFilterArray.join(",")})`)
                     }
                 }
+
+                if (filters.length > 0 || filter2.length > 0) getQuery += " WHERE " + [...filters, ...filter2].join(" AND ")
+
+                getQuery += " ORDER BY id"
+            } else {
+                getQuery = parentQuery
             }
 
-            let rawFilter = undefined
-            try {
-                rawFilter = typeof userFilter === "string" ? JSON.parse(userFilter) : userFilter
-            } catch (error) {
-                res.status(400)
-                return "Failed to parse filter"
-            }
-
-            const filters: string[] = []
-            if (rawFilter) {
-                for (const key of Object.keys(rawFilter)) {
-                    const keyParts = key.split(".")
-                    let filterArray: Array<any>
-                    if (rawFilter[key] instanceof Array) filterArray = rawFilter[key] as Array<any>
-                    else filterArray = [rawFilter[key]]
-
-                    let filterString = keyParts.shift()
-                    filterString = pgPromise.as.value(filterString)
-
-                    for (let i = 0; i < keyParts.length; i++) {
-                        const arrow = i === keyParts.length - 1 ? "->>" : "->"
-                        filterString += `${arrow}${pgPromise.as.text(keyParts[i])}`
-                    }
-
-                    // if filter is an empty array the query will return nothing
-                    // short circuiting and returning empty array premetively
-                    if (filterArray.length === 0) return []
-                    const stringifiedFilterArray = filterArray.map((x) => {
-                        if (typeof x !== "string") return `${pgPromise.as.json(x)}`
-
-                        return `${pgPromise.as.text(x)}`
-                    })
-
-                    filters.push(`${filterString} IN (${stringifiedFilterArray.join(",")})`)
-                }
-            }
-
-            if (filters.length > 0 || filter2.length > 0) getQuery += " WHERE " + [...filters, ...filter2].join(" AND ")
-
-            getQuery += " ORDER BY id"
             let filteredResponse: any[] = await this.db.query(getQuery)
 
             const timeMachineQuery = query.timeMachine ? query.timeMachine : body.timeMachine
@@ -712,8 +717,49 @@ class DB {
             id
         })
 
+        const parents = query.parents ? query.parents : body.parents
+        const parentQuery = parents
+            ? `
+                with RECURSIVE c as (
+                    Select *, 0 as depth from ${component} where id = ${id}
+                
+                    Union All
+                
+                    select ${component}.*, c.depth + 1
+                    from ${component}
+                    JOIN c ON ${component}.id = CAST(c.data ->> '${parents}' as integer)
+                )
+                
+                Select * from c
+                ORDER BY depth 
+            `
+            : undefined
+
+        const children = query.children ? query.children : body.children
+        const childQuery = children
+            ? `
+                with RECURSIVE c as (
+                    Select *, 0 as depth from ${component} where id = ${id}
+                
+                    Union All
+                
+                    select ${component}.*, c.depth + 1
+                    from ${component}
+                    JOIN c ON CAST(${component}.data ->> '${children}' as integer) = c.id
+                )
+                
+                Select * from c
+                ORDER BY depth 
+            `
+            : undefined
+
+        if (childQuery && parentQuery) {
+            res.status(400).send("Cannot query for parents and children at the same time.")
+            return "Bad Request"
+        }
+
         try {
-            const response = await this.getAll(component, query, body, res)
+            const response = await this.getAll(component, query, body, res, parentQuery ? parentQuery : childQuery)
             return response
         } catch (err) {
             // relation does not exist so get request is going to return nothing
