@@ -28,7 +28,7 @@
     "@types/mocha": "^5.2.5",
     "@types/redis": "^2.8.13",
     "ajv": "^6.5.1",
-    "axios": "^0.18.0",
+    "axios": "^0.21.1",
     "cluster": "^0.7.7",
     "diff-match-patch": "^1.0.1",
     "express": "^4.16.3",
