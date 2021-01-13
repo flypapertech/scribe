@@ -62,6 +62,9 @@ const argv = yargs
     .option("redisSchemaDb", {
         default: 1
     })
+    .option("payloadLimit", {
+        default: "50mb"
+    })
     .option("schemaBaseUrl", {
         default: "http://localhost:8080"
     }).argv
@@ -106,6 +109,8 @@ export async function createServer(schemaOverride: any = undefined): Promise<Ser
     const postgresDb: pgPromise.IDatabase<{}> = pgp(dbConnectConfig)
 
     const scribe = express()
+    scribe.use(express.json({ limit: argv.payloadLimit }))
+
     if (argv.mode === "production") {
         mkdirp.sync(argv.home + "/cache/")
         mkdirp.sync(argv.home + "/logs/")
@@ -133,7 +138,7 @@ export async function createServer(schemaOverride: any = undefined): Promise<Ser
 
     const db = new DB(postgresDb, schemaOverride)
 
-    scribe.post("/:component/all", express.json(), (req, res, next) => {
+    scribe.post("/:component/all", (req, res, next) => {
         // get all
         db.getAll(req.params.component, req.query, req.body, res).then((result) => {
             res.send(result)
@@ -142,7 +147,7 @@ export async function createServer(schemaOverride: any = undefined): Promise<Ser
         // returns array always
     })
 
-    scribe.post("/:component/:subcomponent/all", express.json(), (req, res, next) => {
+    scribe.post("/:component/:subcomponent/all", (req, res, next) => {
         // get all
         db.getAll(`${req.params.component}_${req.params.subcomponent}`, req.query, req.body, res).then((result) => {
             res.send(result)
@@ -151,7 +156,7 @@ export async function createServer(schemaOverride: any = undefined): Promise<Ser
         // returns array always
     })
 
-    scribe.post("/:component/:subcomponent", express.json(), async (req, res, next) => {
+    scribe.post("/:component/:subcomponent", async (req, res, next) => {
         const componentSchema = await db.getComponentSchema(`${req.params.component}/${req.params.subcomponent}`)
 
         if (typeof componentSchema === "string") {
@@ -171,7 +176,7 @@ export async function createServer(schemaOverride: any = undefined): Promise<Ser
         // send response success or fail
     })
 
-    scribe.post("/:component", express.json(), async (req, res, next) => {
+    scribe.post("/:component", async (req, res, next) => {
         const componentSchema = await db.getComponentSchema(req.params.component)
         if (typeof componentSchema === "string") {
             res.status(500).send(componentSchema)
@@ -203,7 +208,7 @@ export async function createServer(schemaOverride: any = undefined): Promise<Ser
         })
     })
 
-    scribe.get("/:component/:subcomponent/all", express.json(), (req, res, next) => {
+    scribe.get("/:component/:subcomponent/all", (req, res, next) => {
         // get all
         db.getAll(`${req.params.component}_${req.params.subcomponent}`, req.query, req.body, res).then((result) => {
             res.send(result)
@@ -212,7 +217,7 @@ export async function createServer(schemaOverride: any = undefined): Promise<Ser
         // returns array always
     })
 
-    scribe.get("/:component/all", express.json(), (req, res, next) => {
+    scribe.get("/:component/all", (req, res, next) => {
         // get all
         db.getAll(req.params.component, req.query, req.body, res).then((result) => {
             res.send(result)
@@ -239,7 +244,7 @@ export async function createServer(schemaOverride: any = undefined): Promise<Ser
         // returns array always
     })
 
-    scribe.put("/:component/:subcomponent/:id", express.json(), async (req, res, next) => {
+    scribe.put("/:component/:subcomponent/:id", async (req, res, next) => {
         // sanity check json body
         const componentSchema = await db.getComponentSchema(`${req.params.component}/${req.params.subcomponent}`)
 
@@ -260,7 +265,7 @@ export async function createServer(schemaOverride: any = undefined): Promise<Ser
         })
     })
 
-    scribe.put("/:component/:id", express.json(), async (req, res, next) => {
+    scribe.put("/:component/:id", async (req, res, next) => {
         // sanity check json body
         const componentSchema = await db.getComponentSchema(req.params.component)
         if (typeof componentSchema === "string") {
