@@ -82,72 +82,84 @@ jobs:
         <<: *common-build
         docker:
             - image: circleci/node:10
+            - image: redis
             - *image-postgres-9_6_10
 
     build-node12-postgres9.6.10:
         <<: *common-build
         docker:
             - image: circleci/node:12
+            - image: redis
             - *image-postgres-9_6_10
 
     build-node14-postgres9.6.10:
         <<: *common-build
         docker:
             - image: circleci/node:14
+            - image: redis
             - *image-postgres-9_6_10
 
     build-node10-postgres10:
         <<: *common-build
         docker:
             - image: circleci/node:10
+            - image: redis
             - *image-postgres-10
 
     build-node12-postgres10:
         <<: *common-build
         docker:
             - image: circleci/node:12
+            - image: redis
             - *image-postgres-10
 
     build-node14-postgres10:
         <<: *common-build
         docker:
             - image: circleci/node:14
+            - image: redis
             - *image-postgres-10
 
     build-node10-postgres11:
         <<: *common-build
         docker:
             - image: circleci/node:10
+            - image: redis
             - *image-postgres-11
 
     build-node12-postgres11:
         <<: *common-build
         docker:
             - image: circleci/node:12
+            - image: redis
             - *image-postgres-11
 
     build-node14-postgres11:
         <<: *common-build
         docker:
             - image: circleci/node:14
+            - image: redis
             - *image-postgres-11
 
     build-node10-postgres12:
         <<: *common-build
         docker:
             - image: circleci/node:10
+            - image: redis
             - *image-postgres-12
 
     build-node12-postgres12:
         <<: *common-build
         docker:
             - image: circleci/node:12
+            - image: redis
             - *image-postgres-12
 
     build-node14-postgres12:
         <<: *common-build
         docker:
             - image: circleci/node:14
+            - image: redis
             - *image-postgres-12
 
 workflows:
