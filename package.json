@@ -36,7 +36,7 @@
     "luxon": "^1.8.2",
     "mkdirp": "^0.5.1",
     "pg-promise": "^8.4.4",
-    "pgtools": "^0.3.0",
+    "@flypapertech/pgtools": "0.4.0",
     "redis": "^2.8.0",
     "sqlstring": "^2.3.1",
     "url-join": "4.0.1",

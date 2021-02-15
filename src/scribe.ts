@@ -13,7 +13,7 @@ import * as yargs from "yargs"
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const urljoin = require("url-join")
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const pgtools = require("pgtools")
+const pgtools = require("@flypapertech/pgtools")
 
 const get = (p: string, o: any): any => p.split(".").reduce((xs: any, x: any) => (xs && xs[x] ? xs[x] : null), o)
 
