@@ -3,191 +3,193 @@
 # Check https://circleci.com/docs/2.0/language-javascript/ for more details
 #
 postgres_env: &postgres-env
-  environment:
-    POSTGRES_USER: postgres
+    environment:
+        POSTGRES_USER: postgres
 
 filter-run-always: &filter-run-always
-  filters:
-    tags:
-      only: /.*/
+    filters:
+        tags:
+            only: /.*/
 
 filter-run-on-master-and-version-tag-only: &filter-run-on-master-and-version-tag-only
-  filters:
-    tags:
-      only: /^v.*/
-    branches:
-      ignore: /.*/
+    filters:
+        tags:
+            only: /^v.*/
+        branches:
+            ignore: /.*/
 
 aliases:
-  - &step-checkout
-    checkout
-  - &step-restore-cache 
-    restore_cache:
-      keys:
-      - v1-dependencies-{{ checksum "package.json" }}
-      - v1-dependencies-
-  - &step-install
-    run: npm install
-  - &step-save-cache
-    save_cache:
-      paths:
-        - node_modules
-      key: v1-dependencies-{{ checksum "package.json" }}
-  - &image-postgres-9_6_10
-    image: circleci/postgres:9.6.10-alpine-ram
-    <<: *postgres-env
-  - &image-postgres-10
-    image: circleci/postgres:10-alpine-ram
-    <<: *postgres-env
-  - &image-postgres-11
-    image: circleci/postgres:11-alpine-ram
-    <<: *postgres-env
-  
+    - &step-checkout checkout
+    - &step-restore-cache
+      restore_cache:
+          keys:
+              - v1-dependencies-{{ checksum "package.json" }}
+              - v1-dependencies-
+    - &step-install
+      run: npm install
+    - &step-save-cache
+      save_cache:
+          paths:
+              - node_modules
+          key: v1-dependencies-{{ checksum "package.json" }}
+    - &image-postgres-9_6_10
+      image: circleci/postgres:9.6.10-alpine-ram
+      <<: *postgres-env
+    - &image-postgres-10
+      image: circleci/postgres:10-alpine-ram
+      <<: *postgres-env
+    - &image-postgres-11
+      image: circleci/postgres:11-alpine-ram
+      <<: *postgres-env
+    - &image-postgres-12
+      image: circleci/postgres:12-alpine-ram
+      <<: *postgres-env
+
 build-node-common: &common-build
-  working_directory: ~/repo
-  steps:
-    - *step-checkout
-    - *step-restore-cache
-    - *step-install
-    - *step-save-cache
-    - run:
-        name: Testing
-        command: npm test
-        environment:
-          SCRIBE_APP_DB_USER: postgres
-          SCRIBE_APP_DB_NAME: test
+    working_directory: ~/repo
+    steps:
+        - *step-checkout
+        - *step-restore-cache
+        - *step-install
+        - *step-save-cache
+        - run:
+              name: Testing
+              command: npm test
+              environment:
+                  SCRIBE_APP_DB_USER: postgres
+                  SCRIBE_APP_DB_NAME: test
 
 version: 2
 jobs:
-  deploy:
-    working_directory: ~/repo
-    docker:
-      - image: circleci/node:10
-    steps:
-      - *step-checkout
-      - *step-restore-cache
-      - *step-install
-      - *step-save-cache
-      - run: npm run build
-      - run:
-          name: Authenticate with registry
-          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/repo/.npmrc
-      - run:
-          name: Publish package
-          command: npm publish
+    deploy:
+        working_directory: ~/repo
+        docker:
+            - image: circleci/node:10
+        steps:
+            - *step-checkout
+            - *step-restore-cache
+            - *step-install
+            - *step-save-cache
+            - run: npm run build
+            - run:
+                  name: Authenticate with registry
+                  command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/repo/.npmrc
+            - run:
+                  name: Publish package
+                  command: npm publish
 
-  build-node8-postgres9.6.10:
-    <<: *common-build
-    docker:
-      - image: circleci/node:8
-      - *image-postgres-9_6_10
+    build-node10-postgres9.6.10:
+        <<: *common-build
+        docker:
+            - image: circleci/node:10
+            - *image-postgres-9_6_10
 
-  build-node9-postgres9.6.10:
-    <<: *common-build
-    docker:
-      - image: circleci/node:9
-      - *image-postgres-9_6_10
+    build-node12-postgres9.6.10:
+        <<: *common-build
+        docker:
+            - image: circleci/node:12
+            - *image-postgres-9_6_10
 
-  build-node10-postgres9.6.10:
-    <<: *common-build
-    docker:
-      - image: circleci/node:10
-      - *image-postgres-9_6_10
+    build-node14-postgres9.6.10:
+        <<: *common-build
+        docker:
+            - image: circleci/node:14
+            - *image-postgres-9_6_10
 
-  build-node11-postgres9.6.10:
-    <<: *common-build
-    docker:
-      - image: circleci/node:11
-      - *image-postgres-9_6_10
+    build-node10-postgres10:
+        <<: *common-build
+        docker:
+            - image: circleci/node:10
+            - *image-postgres-10
 
-  build-node8-postgres10:
-    <<: *common-build
-    docker:
-      - image: circleci/node:8
-      - *image-postgres-10
+    build-node12-postgres10:
+        <<: *common-build
+        docker:
+            - image: circleci/node:12
+            - *image-postgres-10
 
-  build-node9-postgres10:
-    <<: *common-build
-    docker:
-      - image: circleci/node:9
-      - *image-postgres-10
+    build-node14-postgres10:
+        <<: *common-build
+        docker:
+            - image: circleci/node:14
+            - *image-postgres-10
 
-  build-node10-postgres10:
-    <<: *common-build
-    docker:
-      - image: circleci/node:10
-      - *image-postgres-10
+    build-node10-postgres11:
+        <<: *common-build
+        docker:
+            - image: circleci/node:10
+            - *image-postgres-11
 
-  build-node11-postgres10:
-    <<: *common-build
-    docker:
-      - image: circleci/node:11
-      - *image-postgres-10
+    build-node12-postgres11:
+        <<: *common-build
+        docker:
+            - image: circleci/node:12
+            - *image-postgres-11
 
-  build-node8-postgres11:
-    <<: *common-build
-    docker:
-      - image: circleci/node:8
-      - *image-postgres-11
+    build-node14-postgres11:
+        <<: *common-build
+        docker:
+            - image: circleci/node:14
+            - *image-postgres-11
 
-  build-node9-postgres11:
-    <<: *common-build
-    docker:
-      - image: circleci/node:9
-      - *image-postgres-11
+    build-node10-postgres12:
+        <<: *common-build
+        docker:
+            - image: circleci/node:10
+            - *image-postgres-12
 
-  build-node10-postgres11:
-    <<: *common-build
-    docker:
-      - image: circleci/node:10
-      - *image-postgres-11
+    build-node12-postgres12:
+        <<: *common-build
+        docker:
+            - image: circleci/node:12
+            - *image-postgres-12
 
-  build-node11-postgres11:
-    <<: *common-build
-    docker:
-      - image: circleci/node:11
-      - *image-postgres-11
+    build-node14-postgres12:
+        <<: *common-build
+        docker:
+            - image: circleci/node:14
+            - *image-postgres-12
 
 workflows:
-  version: 2
-  build_all:
-    jobs:
-      - build-node8-postgres9.6.10:
-          <<: *filter-run-always
-      - build-node9-postgres9.6.10:
-          <<: *filter-run-always
-      - build-node10-postgres9.6.10:
-          <<: *filter-run-always
-      - build-node11-postgres9.6.10:
-          <<: *filter-run-always
-      - build-node8-postgres10:
-          <<: *filter-run-always
-      - build-node9-postgres10:
-          <<: *filter-run-always
-      - build-node10-postgres10:
-          <<: *filter-run-always
-      - build-node11-postgres10:
-          <<: *filter-run-always
-      - build-node8-postgres11:
-          <<: *filter-run-always
-      - build-node9-postgres11:
-          <<: *filter-run-always
-      - build-node10-postgres11:
-          <<: *filter-run-always
-      - build-node11-postgres11:
-          <<: *filter-run-always
-      - deploy:
-          requires:
-            - build-node8-postgres9.6.10
-            - build-node9-postgres9.6.10
-            - build-node10-postgres9.6.10
-            - build-node11-postgres9.6.10
-            - build-node8-postgres10
-            - build-node9-postgres10
-            - build-node10-postgres10
-            - build-node11-postgres10
-            - build-node8-postgres11
-            - build-node9-postgres11
-            - build-node10-postgres11
-            - build-node11-postgres11
-          <<: *filter-run-on-master-and-version-tag-only
+    version: 2
+    build_all:
+        jobs:
+            - build-node14-postgres9.6.10:
+                  <<: *filter-run-always
+            - build-node12-postgres9.6.10:
+                  <<: *filter-run-always
+            - build-node10-postgres9.6.10:
+                  <<: *filter-run-always
+            - build-node14-postgres10:
+                  <<: *filter-run-always
+            - build-node12-postgres10:
+                  <<: *filter-run-always
+            - build-node10-postgres10:
+                  <<: *filter-run-always
+            - build-node14-postgres11:
+                  <<: *filter-run-always
+            - build-node12-postgres11:
+                  <<: *filter-run-always
+            - build-node10-postgres11:
+                  <<: *filter-run-always
+            - build-node14-postgres12:
+                  <<: *filter-run-always
+            - build-node12-postgres12:
+                  <<: *filter-run-always
+            - build-node10-postgres12:
+                  <<: *filter-run-always
+            - deploy:
+                  requires:
+                      - build-node14-postgres9.6.10
+                      - build-node12-postgres9.6.10
+                      - build-node10-postgres9.6.10
+                      - build-node14-postgres10
+                      - build-node12-postgres10
+                      - build-node10-postgres10
+                      - build-node14-postgres11
+                      - build-node12-postgres11
+                      - build-node10-postgres11
+                      - build-node14-postgres12
+                      - build-node12-postgres12
+                      - build-node10-postgres12
+                  <<: *filter-run-on-master-and-version-tag-only
