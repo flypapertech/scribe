@@ -62,6 +62,9 @@ const argv = yargs
     .option("redisSchemaDb", {
         default: 1
     })
+    .option("redisReconnectTimeout", {
+        default: -1
+    })
     .option("payloadLimit", {
         default: "50mb"
     })
@@ -387,7 +390,13 @@ class DB {
         this.schemaCache = new RedisClient({
             host: argv.redisHost,
             port: argv.redisPort,
-            db: argv.redisSchemaDb
+            db: argv.redisSchemaDb,
+            retry_strategy: (options) => {
+                if (argv.redisReconnectTimeout !== -1 && options.total_retry_time > argv.redisReconnectTimeout)
+                    return new Error("Retry time exhausted.")
+
+                return Math.min(options.attempt * 100, 3000)
+            }
         })
 
         this.schemaCache.on("error", (error) => {
@@ -486,7 +495,7 @@ class DB {
         }
 
         let ignoredKeyCount = 0
-        Object.keys(schema.properties).forEach(function(key, index) {
+        Object.keys(schema.properties).forEach(function (key, index) {
             if (key !== "id") {
                 queryData.sqlColumnNames.push(key)
                 queryData.sqlColumnIndexes.push(`$${index - ignoredKeyCount + 1}`)
