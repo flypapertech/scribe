@@ -140,10 +140,10 @@ export async function createServer(schemaOverride: any = undefined): Promise<Ser
     }
 
     const db = new DB(postgresDb, schemaOverride)
-
     // NOTE this is a super dangerous route, scribe is meant to only be listening inside a private vpc
     scribe.post("/sql", (req, res, next) => {
-        db.executeSqlQuery(req.body, res)
+        if (typeof req.body.query !== "string") return res.status(400).send("Missing query property.")
+        db.executeSqlQuery(req.body.query, res)
     })
 
     scribe.post("/:component/all", (req, res, next) => {
