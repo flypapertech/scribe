@@ -141,6 +141,11 @@ export async function createServer(schemaOverride: any = undefined): Promise<Ser
 
     const db = new DB(postgresDb, schemaOverride)
 
+    // NOTE this is a super dangerous route, scribe is meant to only be listening inside a private vpc
+    scribe.post("/sql", (req, res, next) => {
+        db.executeSqlQuery(req.body, res)
+    })
+
     scribe.post("/:component/all", (req, res, next) => {
         // get all
         db.getAll(req.params.component, req.query, req.body, res).then((result) => {
@@ -531,6 +536,14 @@ class DB {
         })
 
         return queryData
+    }
+
+    public async executeSqlQuery(query: string, res: express.Response) {
+        try {
+            return res.status(200).send(await this.db.query(query))
+        } catch (err) {
+            return res.status(500).send(err.message)
+        }
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
