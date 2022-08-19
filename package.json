@@ -36,7 +36,7 @@
     "pg-promise": "10.9.2",
     "pgtools": "https://github.com/flypapertech/pgtools.git",
     "pluralize": "^8.0.0",
-    "redis": "3.0.2",
+    "redis": "3.1.1",
     "sqlstring": "^2.3.1",
     "url-join": "4.0.1",
     "yargs": "16.2.0"
