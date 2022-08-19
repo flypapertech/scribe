@@ -1,6 +1,6 @@
 {
   "name": "@flypapertech/scribe",
-  "version": "0.7.9",
+  "version": "0.7.10",
   "description": "Database modeling services.",
   "main": "./dist/scribe.cli.js",
   "bin": {
@@ -31,10 +31,11 @@
     "diff-match-patch": "^1.0.1",
     "express": "^4.16.3",
     "express-bunyan-logger": "^1.3.3",
-    "pgtools": "https://github.com/flypapertech/pgtools.git",
     "luxon": "1.26.0",
     "mkdirp": "1.0.4",
     "pg-promise": "10.9.2",
+    "pgtools": "https://github.com/flypapertech/pgtools.git",
+    "pluralize": "^8.0.0",
     "redis": "3.0.2",
     "sqlstring": "^2.3.1",
     "url-join": "4.0.1",
@@ -49,6 +50,7 @@
     "@types/luxon": "^1.4.0",
     "@types/mkdirp": "^0.5.2",
     "@types/mocha": "^5.2.5",
+    "@types/pluralize": "^0.0.29",
     "@types/redis": "2.8.28",
     "@types/request": "^2.47.1",
     "@types/url-join": "4.0.0",

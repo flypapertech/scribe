@@ -9,6 +9,7 @@ import * as pgPromise from "pg-promise"
 import { RedisClient } from "redis"
 import { promisify } from "util"
 import * as yargs from "yargs"
+import * as pluralize from "pluralize"
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const urljoin = require("url-join")
@@ -780,13 +781,30 @@ class DB {
             `
             : undefined
 
+        const referenceComponent = query.referenceComponent ? query.referenceComponent : body.referenceComponent
+        const referencePath = query.referencePath ? query.referencePath : body.referencePath
+        const pluralComponent = pluralize(component)
+        const referenceQuery = referenceComponent
+            ? `
+                SELECT *
+                FROM ${referenceComponent} a, jsonb_array_elements(a.data->'${referencePath ?? pluralComponent}') b
+                WHERE b = '${id}'::jsonb
+        
+            `
+            : undefined
+
         if (childQuery && parentQuery) {
             res.status(400).send("Cannot query for parents and children at the same time.")
             return "Bad Request"
         }
 
+        if ((childQuery || parentQuery) && referenceQuery) {
+            res.status(400).send("Cannot query for parents/children and references at the same time.")
+            return "Bad Request"
+        }
+
         try {
-            const response = await this.getAll(component, query, body, res, parentQuery ? parentQuery : childQuery)
+            const response = await this.getAll(component, query, body, res, parentQuery ?? childQuery ?? referenceQuery)
             return response
         } catch (err) {
             // relation does not exist so get request is going to return nothing

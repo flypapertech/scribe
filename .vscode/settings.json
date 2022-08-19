@@ -3,7 +3,7 @@
   "files.insertFinalNewline": true,
   // ESLint
   "eslint.options": {
-    "configFile": ".eslintrc.json"
+    "overrideConfigFile": ".eslintrc.json"
   },
   "eslint.validate": [
     "javascript",
