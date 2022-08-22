@@ -1,11 +1,14 @@
 {
-    "extends": ["prettier/@typescript-eslint", "plugin:@typescript-eslint/recommended", "plugin:prettier/recommended", "plugin:jsdoc/recommended"],
+    "extends": ["plugin:@typescript-eslint/recommended", "plugin:jsdoc/recommended", "plugin:prettier/recommended"],
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
-        "sourceType": "module"
+        "sourceType": "module",
+        "project": "./tsconfig.json"
     },
     "plugins": ["eslint-plugin-import", "simple-import-sort", "sort-class-members"],
     "rules": {
+        "prettier/prettier": "error",
+        "@typescript-eslint/no-redeclare": ["error"],
         "@typescript-eslint/camelcase": 0,
         "@typescript-eslint/member-delimiter-style": [
             "warn",
@@ -20,7 +23,17 @@
                 }
             }
         ],
-        "@typescript-eslint/ban-ts-ignore": "off",
+        "@typescript-eslint/ban-ts-comment": [
+            "error",
+            {
+                "ts-expect-error": true,
+                "ts-ignore": "allow-with-description",
+                "ts-nocheck": true,
+                "ts-check": false,
+                "minimumDescriptionLength": 5
+            }
+        ],
+        "@typescript-eslint/no-unnecessary-condition": "error",
         "padding-line-between-statements": [
             "error",
             {
@@ -53,6 +66,22 @@
                 "allowEmptyCatch": true
             }
         ],
+        "no-restricted-imports": [
+            "error",
+            {
+                "paths": [
+                    {
+                        "name": "lodash",
+                        "message": "Use the individual lodash imports instead so it tree shakes. i.e. import get from 'lodash/get'"
+                    },
+                    {
+                        "name": "Logger",
+                        "message": "Use the globally available LOGGER const instead."
+                    }
+                ],
+                "patterns": ["*/Logger"]
+            }
+        ],
         "eqeqeq": "error",
         "no-unsafe-finally": "error",
         "guard-for-in": "error",
@@ -66,12 +95,12 @@
                 "ignoreRestSiblings": true
             }
         ],
+        "@typescript-eslint/no-non-null-assertion": "error",
         "one-var-declaration-per-line": "error",
         "import/order": "off",
         "sort-imports": "off",
-        "simple-import-sort/sort": "error",
+        "simple-import-sort/imports": "error",
         "quote-props": "off",
-        "no-redeclare": "error",
         "no-underscore-dangle": "error",
         "import/no-extraneous-dependencies": [
             "error",
@@ -82,6 +111,12 @@
         "jsdoc/require-param-type": 0,
         "jsdoc/require-returns-type": 0,
         "jsdoc/check-values": 0,
+        "jsdoc/check-tag-names": [
+            1,
+            {
+                "definedTags": ["openapi", "swagger"]
+            }
+        ],
         "sort-class-members/sort-class-members": [
             2,
             {
@@ -120,10 +155,15 @@
                     "core-js/*",
                     "@amcharts/amcharts4/*",
                     "@amcharts/amcharts4/**/*",
+                    "@amcharts/amcharts4-geodata/*",
                     "@nativescript/core/*",
                     "@nativescript/core/**/*",
+                    "@nativescript/mlkit-core/*",
+                    "yargs/*",
                     "nativescript-webview-interface/**/*",
-                    "nativescript-material-*/*"
+                    "@nativescript-community/ui-material-*/*",
+                    "vuetify/**/*",
+                    "**/assets/**/*"
                 ]
             }
         ]

@@ -1,22 +1,23 @@
 #!/usr/bin/env node
-import * as cluster from "cluster"
-import * as os from "os"
-import { createServer, tryCreateDb } from "./scribe"
+import cluster from "cluster"
+import os from "os"
+
+import { createServer, tryCreateDb } from "./scribe.js"
 
 if (cluster.isMaster) {
-    tryCreateDb().then(() => {
-        let cores = os.cpus()
+    tryCreateDb()
+        .then(() => {
+            const cores = os.cpus()
 
-        for (let i = 0; i < cores.length; i++) {
-            cluster.fork()
-        }
-    
-        cluster.on("exit", worker => {
-            cluster.fork()
+            for (let i = 0; i < cores.length; i++) cluster.fork()
+
+            cluster.on("exit", (worker) => {
+                cluster.fork()
+            })
         })
-    }).catch((error) => {
-        throw error
-    })
+        .catch((error) => {
+            throw error
+        })
 } else {
-   createServer()
+    createServer()
 }

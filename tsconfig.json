@@ -1,15 +1,14 @@
 {
-   "compilerOptions": {
-       "strict": true,
-       "target": "es2019",
-       "module": "commonjs",
-       "moduleResolution": "node",
-       "removeComments": true,
-       "outDir": "dist",
-       "allowSyntheticDefaultImports": true,
-       "lib": ["es2020"]
-   },
-   "files": [
-       "./src/scribe.cli.ts"
-   ]
+    "compilerOptions": {
+        "strict": true,
+        "target": "es2021",
+        "module": "Node16",
+        "moduleResolution": "Node16",
+        "removeComments": true,
+        "resolveJsonModule": true,
+        "outDir": "dist",
+        "allowSyntheticDefaultImports": true,
+        "lib": ["es2021", "DOM"]
+    },
+    "files": ["./src/scribe.cli.ts", "./src/scribe.d.ts", "./src/scribe.spec.ts"]
 }

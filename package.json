@@ -1,81 +1,85 @@
 {
-  "name": "@flypapertech/scribe",
-  "version": "0.7.11",
-  "description": "Database modeling services.",
-  "main": "./dist/scribe.cli.js",
-  "bin": {
-    "scribe": "./dist/scribe.cli.js"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "scripts": {
-    "build": "node_modules/.bin/tsc --project .; cp ./src/default.table.schema.json ./dist/default.table.schema.json",
-    "test": "node_modules/.bin/mocha --exit --require ts-node/register test/**/*.spec.ts",
-    "start": "node_modules/.bin/ts-node src/scribe.cli.ts"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/flypapertech/scribe.git"
-  },
-  "author": "Logikgate",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/flypapertech/scribe/issues"
-  },
-  "homepage": "https://github.com/flypapertech/scribe#readme",
-  "dependencies": {
-    "ajv": "6.12.0",
-    "axios": "^0.21.1",
-    "cluster": "^0.7.7",
-    "diff-match-patch": "^1.0.1",
-    "express": "^4.16.3",
-    "express-bunyan-logger": "^1.3.3",
-    "luxon": "1.26.0",
-    "mkdirp": "1.0.4",
-    "pg-promise": "10.9.2",
-    "pgtools": "https://github.com/flypapertech/pgtools.git",
-    "pluralize": "^8.0.0",
-    "redis": "3.0.2",
-    "sqlstring": "^2.3.1",
-    "url-join": "4.0.1",
-    "yargs": "16.2.0"
-  },
-  "devDependencies": {
-    "@types/chai": "^4.1.6",
-    "@types/chai-http": "^3.0.5",
-    "@types/diff-match-patch": "^1.0.32",
-    "@types/express": "^4.16.0",
-    "@types/lodash": "^4.14.117",
-    "@types/luxon": "^1.4.0",
-    "@types/mkdirp": "^0.5.2",
-    "@types/mocha": "^5.2.5",
-    "@types/pluralize": "^0.0.29",
-    "@types/redis": "2.8.28",
-    "@types/request": "^2.47.1",
-    "@types/url-join": "4.0.0",
-    "@types/yargs": "16.0.0",
-    "@typescript-eslint/eslint-plugin": "4.15.0",
-    "@typescript-eslint/parser": "4.15.0",
-    "chai": "^4.1.2",
-    "chai-http": "^4.0.0",
-    "eslint": "7.20.0",
-    "eslint-config-prettier": "7.2.0",
-    "eslint-plugin-import": "2.22.1",
-    "eslint-plugin-jsdoc": "32.0.0",
-    "eslint-plugin-mocha": "8.0.0",
-    "eslint-plugin-prettier": "3.3.1",
-    "eslint-plugin-simple-import-sort": "7.0.0",
-    "eslint-plugin-sort-class-members": "1.9.0",
-    "mocha": "^5.2.0",
-    "prettier": "2.2.1",
-    "prettier-check": "2.0.0",
-    "prettier-eslint": "12.0.0",
-    "prettier-eslint-cli": "5.0.0",
-    "should": "^13.2.3",
-    "ts-node": "9.1.1",
-    "tslint": "6.1.3",
-    "typescript": "4.1.5",
-    "uglify-es": "3.3.9"
-  }
+    "name": "@flypapertech/scribe",
+    "version": "0.7.11",
+    "description": "Database modeling services.",
+    "exports": "./dist/scribe.cli.js",
+    "type": "module",
+    "engines": {
+        "node": ">=14.16"
+    },
+    "bin": {
+        "scribe": "./dist/scribe.cli.js"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "scripts": {
+        "build": "rm -rf dist; node_modules/.bin/tsc --project .; cp ./src/default.table.schema.json ./dist/default.table.schema.json",
+        "test": "TS_NODE_TRANSPILE_ONLY=1 node_modules/.bin/mocha",
+        "start": "node_modules/.bin/ts-node src/scribe.cli.ts"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/flypapertech/scribe.git"
+    },
+    "author": "Logikgate",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/flypapertech/scribe/issues"
+    },
+    "homepage": "https://github.com/flypapertech/scribe#readme",
+    "dependencies": {
+        "@redis/client": "^1.2.0",
+        "ajv": "6.12.0",
+        "cluster": "^0.7.7",
+        "diff-match-patch": "^1.0.1",
+        "express": "4.18.1",
+        "express-bunyan-logger": "1.3.3",
+        "luxon": "1.26.0",
+        "mkdirp": "1.0.4",
+        "node-fetch": "3.2.10",
+        "pg-promise": "10.9.2",
+        "pgtools": "0.3.2",
+        "pluralize": "8.0.0",
+        "redis": "4.2.0",
+        "sqlstring": "2.3.3",
+        "url-join": "5.0.0",
+        "yargs": "17.5.1"
+    },
+    "devDependencies": {
+        "@types/chai": "4.3.3",
+        "@types/chai-http": "4.2.0",
+        "@types/diff-match-patch": "^1.0.32",
+        "@types/express": "4.17.13",
+        "@types/express-serve-static-core": "^4.17.30",
+        "@types/lodash": "^4.14.117",
+        "@types/luxon": "^1.4.0",
+        "@types/mkdirp": "^0.5.2",
+        "@types/mocha": "9.1.1",
+        "@types/node": "^16.11.7",
+        "@types/pluralize": "0.0.29",
+        "@types/request": "^2.47.1",
+        "@types/serve-static": "^1.15.0",
+        "@types/url-join": "4.0.0",
+        "@types/yargs": "17.0.11",
+        "@typescript-eslint/eslint-plugin": "5.33.1",
+        "@typescript-eslint/parser": "5.33.1",
+        "chai": "4.3.6",
+        "chai-http": "4.3.0",
+        "eslint": "8.22.0",
+        "eslint-config-prettier": "8.5.0",
+        "eslint-plugin-import": "2.26.0",
+        "eslint-plugin-jsdoc": "39.3.6",
+        "eslint-plugin-mocha": "8.0.0",
+        "eslint-plugin-prettier": "4.2.1",
+        "eslint-plugin-simple-import-sort": "7.0.0",
+        "eslint-plugin-sort-class-members": "1.14.1",
+        "mocha": "10.0.0",
+        "prettier": "2.7.1",
+        "prettier-eslint": "15.0.1",
+        "should": "^13.2.3",
+        "ts-node": "10.9.1",
+        "typescript": "4.7.4",
+        "uglify-es": "3.3.9"
+    }
 }

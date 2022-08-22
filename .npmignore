@@ -1,10 +1,15 @@
 test
 src
 .snyk
-.travis.yml
+.circleci
+.eslintrc
+.mocharc.json
+.mailmap
+.prettierrc.json
 .vscodeignore
 .vscode
 tsconfig.json
-tslint.json
 yarn.lock
 package-lock.json
+*.spec.js
+*.tgz

@@ -1,24 +1,26 @@
-import * as Ajv from "ajv"
-import Axios from "axios"
+import { RedisClientType } from "@redis/client"
+import Ajv from "ajv"
 import { diff_match_patch } from "diff-match-patch"
-import * as express from "express"
+import express from "express"
 import { Server } from "http"
 import { DateTime } from "luxon"
-import * as mkdirp from "mkdirp"
-import * as pgPromise from "pg-promise"
-import { RedisClient } from "redis"
-import { promisify } from "util"
-import * as yargs from "yargs"
-import * as pluralize from "pluralize"
+import mkdirp from "mkdirp"
+import { createRequire } from "module"
+import fetch from "node-fetch"
+import pgPromise from "pg-promise"
+import pgtools from "pgtools"
+import pluralize from "pluralize"
+import { createClient } from "redis"
+import urlJoin from "url-join"
+import yargs from "yargs"
+import { hideBin } from "yargs/helpers"
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const urljoin = require("url-join")
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const pgtools = require("pgtools")
+import { getErrorMessage, isPgPromiseError, isPgToolsError } from "./errors.js"
 
 const get = (p: string, o: any): any => p.split(".").reduce((xs: any, x: any) => (xs && xs[x] ? xs[x] : null), o)
+const require = createRequire(import.meta.url)
 
-const argv = yargs
+const argv = yargs(hideBin(process.argv))
     .env("SCRIBE_APP")
     .option("n", {
         alias: "name",
@@ -64,18 +66,15 @@ const argv = yargs
         default: 1
     })
     .option("redisReconnectTimeout", {
-        default: -1
+        default: 5000
     })
     .option("payloadLimit", {
         default: "50mb"
     })
     .option("schemaBaseUrl", {
-        default: "http://localhost:8080"
-    }).argv
-
-interface Schemas {
-    [key: string]: ComponentSchema
-}
+        type: "string"
+    })
+    .parseSync()
 
 interface ComponentSchema {
     schema: object
@@ -97,7 +96,8 @@ export async function tryCreateDb(): Promise<void> {
         const res = await pgtools.createdb(dbCreateConfig, argv.dbName)
         console.log(res)
     } catch (err) {
-        if (err.pgErr === undefined || err.pgErr.code !== "42P04") throw err
+        if (!isPgToolsError(err)) throw err
+        if (err.pgErr.code !== "42P04") throw err
     }
 }
 
@@ -110,7 +110,7 @@ export async function createServer(schemaOverride: any = undefined): Promise<Ser
     })
 
     const pgp: pgPromise.IMain = pgPromise({})
-    const postgresDb: pgPromise.IDatabase<{}> = pgp(dbConnectConfig)
+    const postgresDb: pgPromise.IDatabase<Record<string, never>> = pgp(dbConnectConfig)
 
     const scribe = express()
     scribe.use(express.json({ limit: argv.payloadLimit }))
@@ -120,7 +120,6 @@ export async function createServer(schemaOverride: any = undefined): Promise<Ser
         mkdirp.sync(argv.home + "/logs/")
 
         scribe.use(
-            // eslint-disable-next-line @typescript-eslint/no-var-requires
             require("express-bunyan-logger")({
                 name: argv.name,
                 streams: [
@@ -381,27 +380,21 @@ export async function createServer(schemaOverride: any = undefined): Promise<Ser
 }
 
 class DB {
-    private db: pgPromise.IDatabase<{}>
+    private db: pgPromise.IDatabase<Record<string, never>>
     private defaultSchema: object
-    private schemaCache: RedisClient
-    private schemaGetAsync: any
     private redisError = false
+    private schemaCache: RedisClientType
 
-    constructor(db: pgPromise.IDatabase<{}>, schemaOverride: any = undefined) {
+    constructor(db: pgPromise.IDatabase<Record<string, never>>, schemaOverride: any = undefined) {
         this.db = db
-        let defaultSchema = schemaOverride
-        if (schemaOverride === undefined) defaultSchema = require(__dirname + "/default.table.schema.json")
-
-        this.defaultSchema = defaultSchema
-        this.schemaCache = new RedisClient({
-            host: argv.redisHost,
-            port: argv.redisPort,
-            db: argv.redisSchemaDb,
-            retry_strategy: (options) => {
-                if (argv.redisReconnectTimeout !== -1 && options.total_retry_time > argv.redisReconnectTimeout)
-                    return new Error("Retry time exhausted.")
-
-                return Math.min(options.attempt * 100, 3000)
+        this.defaultSchema = schemaOverride ?? require("./default.table.schema.json")
+        this.schemaCache = createClient({
+            url: `redis://${argv.redisHost}:${argv.redisPort}/${argv.redisSchemaDb}`,
+            socket: {
+                connectTimeout: argv.redisReconnectTimeout,
+                reconnectStrategy: (attempts) => {
+                    return Math.min(attempts * 100, 3000)
+                }
             }
         })
 
@@ -410,17 +403,18 @@ class DB {
             this.redisError = true
         })
 
+        this.schemaCache.connect()
+
         // flush the schema cache upon startup
-        this.schemaCache.flushdb()
-        this.schemaGetAsync = promisify(this.schemaCache.get).bind(this.schemaCache)
+        this.schemaCache.flushDb()
     }
 
     public async getComponentSchema(component: string): Promise<ComponentSchema | string> {
         const ajv = new Ajv({
             loadSchema: async (uri: string): Promise<any> => {
                 try {
-                    const res = await Axios.get(uri)
-                    return res.data
+                    const res = await fetch(uri)
+                    return res.json()
                 } catch (error) {
                     throw new Error("Loading error: " + error)
                 }
@@ -428,7 +422,7 @@ class DB {
         })
 
         if (!this.redisError) {
-            const storedSchemaString = await this.schemaGetAsync(component)
+            const storedSchemaString = await this.schemaCache.get(component)
 
             if (storedSchemaString) {
                 try {
@@ -461,10 +455,10 @@ class DB {
 
         // TODO should this fall back or error? If scribe can't contact the server then should we be allowing random data in?
         try {
-            const schemaUrl = urljoin(argv.schemaBaseUrl, component, "schema")
-            const response = await Axios.get(schemaUrl)
+            const schemaUrl = urlJoin(argv.schemaBaseUrl, component, "schema")
+            const data = await (await fetch(schemaUrl)).json()
 
-            if (response.data === undefined) {
+            if (data === null || data === undefined || typeof data !== "object") {
                 if (!argv.requireSchema) {
                     console.warn("No schema found, falling back to default schema")
                     return defaultSchema
@@ -473,11 +467,11 @@ class DB {
                 return "Failed to get schema at " + schemaUrl
             }
 
-            const validator = await ajv.compileAsync(response.data)
-            if (!this.redisError) this.schemaCache.set(component, JSON.stringify(response.data))
+            const validator = await ajv.compileAsync(data)
+            if (!this.redisError) this.schemaCache.set(component, JSON.stringify(data))
 
             return {
-                schema: response.data,
+                schema: data,
                 validator
             }
         } catch (err) {
@@ -543,7 +537,7 @@ class DB {
         try {
             return res.status(200).send(await this.db.query(query))
         } catch (err) {
-            return res.status(500).send(err.message)
+            return res.status(500).send(getErrorMessage(err))
         }
     }
 
@@ -576,7 +570,8 @@ class DB {
             const diff = dmp.patch_make(resultString, "")
             const diffValues = [result[0].id, JSON.stringify([dmp.patch_toText(diff)])]
 
-            const historyResult = await this.db.query(insertHistoryQuery, diffValues)
+            // TODO what to do with this history result? Nothing?
+            await this.db.query(insertHistoryQuery, diffValues)
             return result
         } catch (err) {
             console.log(err)
@@ -703,8 +698,7 @@ class DB {
                         const timestamp = DateTime.fromISO(timeMachine.timestamp)
 
                         filteredResponse = allHistory.map((history) => {
-                            // @ts-ignore
-                            return history.history.reduce((historyAtTime, historyEntry) => {
+                            return history.history.reduce((historyAtTime: any, historyEntry: any) => {
                                 const entryDate = get(timeMachine.key, historyEntry)
                                 if (!entryDate) return historyAtTime
 
@@ -732,7 +726,7 @@ class DB {
             return filteredResponse
         } catch (err) {
             // relation does not exist so get request is going to return nothing
-            if (err.code === "42P01") return []
+            if (isPgPromiseError(err) && err.code === "42P01") return []
 
             console.error(err)
             res.status(500)
@@ -808,7 +802,7 @@ class DB {
             return response
         } catch (err) {
             // relation does not exist so get request is going to return nothing
-            if (err.code === "42P01") return []
+            if (isPgPromiseError(err) && err.code === "42P01") return []
 
             console.error(err)
             res.status(500)
@@ -836,7 +830,7 @@ class DB {
             return oldVersions
         } catch (err) {
             // relation does not exist so get request is going to return nothing
-            if (err.code === "42P01") return []
+            if (isPgPromiseError(err) && err.code === "42P01") return []
 
             console.error(err)
             res.status(500)
@@ -861,7 +855,7 @@ class DB {
             return allHistory
         } catch (err) {
             // relation does not exist so get request is going to return nothing
-            if (err.code === "42P01") return []
+            if (isPgPromiseError(err) && err.code === "42P01") return []
 
             console.error(err)
             res.status(500)
@@ -898,10 +892,12 @@ class DB {
             if (!oldHistory || oldHistory.length === 0) {
                 const diffValues = [result[0].id, JSON.stringify([dmp.patch_toText(diff)])]
 
-                const historyResult = await this.db.query(insertHistoryQuery, diffValues)
+                // TODO what to do with this history result? Nothing?
+                await this.db.query(insertHistoryQuery, diffValues)
             } else {
                 oldHistory[0].patches.push(dmp.patch_toText(diff))
-                const historyResult = await this.db.query(updateHistoryQuery, JSON.stringify(oldHistory[0].patches))
+                // TODO what to do with this history result? Nothing?
+                await this.db.query(updateHistoryQuery, JSON.stringify(oldHistory[0].patches))
             }
 
             return result
