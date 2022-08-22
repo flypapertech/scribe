@@ -64,7 +64,7 @@ jobs:
     deploy:
         working_directory: ~/repo
         docker:
-            - image: circleci/node:16
+            - image: circleci/node:16.17.0
         steps:
             - *step-checkout
             - *step-restore-cache
@@ -81,84 +81,84 @@ jobs:
     build-node14-postgres9:
         <<: *common-build
         docker:
-            - image: cimg/node:14
+            - image: cimg/node:14.20.0
             - image: redis
             - *image-postgres-9
 
     build-node16-postgres9:
         <<: *common-build
         docker:
-            - image: cimg/node:16
+            - image: cimg/node:16.17.0
             - image: redis
             - *image-postgres-9
 
     build-node18-postgres9:
         <<: *common-build
         docker:
-            - image: cimg/node:18
+            - image: cimg/node:18.7.0
             - image: redis
             - *image-postgres-9
 
     build-node14-postgres10:
         <<: *common-build
         docker:
-            - image: cimg/node:14
+            - image: cimg/node:14.20.0
             - image: redis
             - *image-postgres-10
 
     build-node16-postgres10:
         <<: *common-build
         docker:
-            - image: cimg/node:16
+            - image: cimg/node:16.17.0
             - image: redis
             - *image-postgres-10
 
     build-node18-postgres10:
         <<: *common-build
         docker:
-            - image: cimg/node:18
+            - image: cimg/node:18.7.0
             - image: redis
             - *image-postgres-10
 
     build-node14-postgres11:
         <<: *common-build
         docker:
-            - image: cimg/node:14
+            - image: cimg/node:14.20.0
             - image: redis
             - *image-postgres-11
 
     build-node16-postgres11:
         <<: *common-build
         docker:
-            - image: cimg/node:16
+            - image: cimg/node:16.17.0
             - image: redis
             - *image-postgres-11
 
     build-node18-postgres11:
         <<: *common-build
         docker:
-            - image: cimg/node:18
+            - image: cimg/node:18.7.0
             - image: redis
             - *image-postgres-11
 
     build-node14-postgres12:
         <<: *common-build
         docker:
-            - image: cimg/node:14
+            - image: cimg/node:14.20.0
             - image: redis
             - *image-postgres-12
 
     build-node16-postgres12:
         <<: *common-build
         docker:
-            - image: cimg/node:16
+            - image: cimg/node:16.17.0
             - image: redis
             - *image-postgres-12
 
     build-node18-postgres12:
         <<: *common-build
         docker:
-            - image: cimg/node:18
+            - image: cimg/node:18.7.0
             - image: redis
             - *image-postgres-12
 
