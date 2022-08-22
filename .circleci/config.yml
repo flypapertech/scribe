@@ -32,17 +32,17 @@ aliases:
           paths:
               - node_modules
           key: v1-dependencies-{{ checksum "package.json" }}
-    - &image-postgres-9_6_10
-      image: circleci/postgres:9.6.10-alpine-ram
+    - &image-postgres-9
+      image: cimg/postgres:9.6.24
       <<: *postgres-env
     - &image-postgres-10
-      image: circleci/postgres:10-alpine-ram
+      image: cimg/postgres:10.21
       <<: *postgres-env
     - &image-postgres-11
-      image: circleci/postgres:11-alpine-ram
+      image: cimg/postgres:11.16
       <<: *postgres-env
     - &image-postgres-12
-      image: circleci/postgres:12-alpine-ram
+      image: cimg/postgres:12.11
       <<: *postgres-env
 
 build-node-common: &common-build
@@ -64,7 +64,7 @@ jobs:
     deploy:
         working_directory: ~/repo
         docker:
-            - image: circleci/node:10
+            - image: circleci/node:16
         steps:
             - *step-checkout
             - *step-restore-cache
@@ -78,87 +78,87 @@ jobs:
                   name: Publish package
                   command: npm publish
 
-    build-node10-postgres9.6.10:
+    build-node14-postgres9:
         <<: *common-build
         docker:
-            - image: circleci/node:10
+            - image: cimg/node:14
             - image: redis
-            - *image-postgres-9_6_10
+            - *image-postgres-9
 
-    build-node12-postgres9.6.10:
+    build-node16-postgres9:
         <<: *common-build
         docker:
-            - image: circleci/node:12
+            - image: cimg/node:16
             - image: redis
-            - *image-postgres-9_6_10
+            - *image-postgres-9
 
-    build-node14-postgres9.6.10:
+    build-node18-postgres9:
         <<: *common-build
         docker:
-            - image: circleci/node:14
+            - image: cimg/node:18
             - image: redis
-            - *image-postgres-9_6_10
-
-    build-node10-postgres10:
-        <<: *common-build
-        docker:
-            - image: circleci/node:10
-            - image: redis
-            - *image-postgres-10
-
-    build-node12-postgres10:
-        <<: *common-build
-        docker:
-            - image: circleci/node:12
-            - image: redis
-            - *image-postgres-10
+            - *image-postgres-9
 
     build-node14-postgres10:
         <<: *common-build
         docker:
-            - image: circleci/node:14
+            - image: cimg/node:14
             - image: redis
             - *image-postgres-10
 
-    build-node10-postgres11:
+    build-node16-postgres10:
         <<: *common-build
         docker:
-            - image: circleci/node:10
+            - image: cimg/node:16
             - image: redis
-            - *image-postgres-11
+            - *image-postgres-10
 
-    build-node12-postgres11:
+    build-node18-postgres10:
         <<: *common-build
         docker:
-            - image: circleci/node:12
+            - image: cimg/node:18
             - image: redis
-            - *image-postgres-11
+            - *image-postgres-10
 
     build-node14-postgres11:
         <<: *common-build
         docker:
-            - image: circleci/node:14
+            - image: cimg/node:14
             - image: redis
             - *image-postgres-11
 
-    build-node10-postgres12:
+    build-node16-postgres11:
         <<: *common-build
         docker:
-            - image: circleci/node:10
+            - image: cimg/node:16
             - image: redis
-            - *image-postgres-12
+            - *image-postgres-11
 
-    build-node12-postgres12:
+    build-node18-postgres11:
         <<: *common-build
         docker:
-            - image: circleci/node:12
+            - image: cimg/node:18
             - image: redis
-            - *image-postgres-12
+            - *image-postgres-11
 
     build-node14-postgres12:
         <<: *common-build
         docker:
-            - image: circleci/node:14
+            - image: cimg/node:14
+            - image: redis
+            - *image-postgres-12
+
+    build-node16-postgres12:
+        <<: *common-build
+        docker:
+            - image: cimg/node:16
+            - image: redis
+            - *image-postgres-12
+
+    build-node18-postgres12:
+        <<: *common-build
+        docker:
+            - image: cimg/node:18
             - image: redis
             - *image-postgres-12
 
@@ -166,42 +166,42 @@ workflows:
     version: 2
     build_all:
         jobs:
-            - build-node14-postgres9.6.10:
+            - build-node18-postgres9:
                   <<: *filter-run-always
-            - build-node12-postgres9.6.10:
+            - build-node16-postgres9:
                   <<: *filter-run-always
-            - build-node10-postgres9.6.10:
+            - build-node14-postgres9:
+                  <<: *filter-run-always
+            - build-node18-postgres10:
+                  <<: *filter-run-always
+            - build-node16-postgres10:
                   <<: *filter-run-always
             - build-node14-postgres10:
                   <<: *filter-run-always
-            - build-node12-postgres10:
+            - build-node18-postgres11:
                   <<: *filter-run-always
-            - build-node10-postgres10:
+            - build-node16-postgres11:
                   <<: *filter-run-always
             - build-node14-postgres11:
                   <<: *filter-run-always
-            - build-node12-postgres11:
+            - build-node18-postgres12:
                   <<: *filter-run-always
-            - build-node10-postgres11:
+            - build-node16-postgres12:
                   <<: *filter-run-always
             - build-node14-postgres12:
                   <<: *filter-run-always
-            - build-node12-postgres12:
-                  <<: *filter-run-always
-            - build-node10-postgres12:
-                  <<: *filter-run-always
             - deploy:
                   requires:
-                      - build-node14-postgres9.6.10
-                      - build-node12-postgres9.6.10
-                      - build-node10-postgres9.6.10
+                      - build-node18-postgres9
+                      - build-node16-postgres9
+                      - build-node14-postgres9
+                      - build-node18-postgres10
+                      - build-node16-postgres10
                       - build-node14-postgres10
-                      - build-node12-postgres10
-                      - build-node10-postgres10
+                      - build-node18-postgres11
+                      - build-node16-postgres11
                       - build-node14-postgres11
-                      - build-node12-postgres11
-                      - build-node10-postgres11
+                      - build-node18-postgres12
+                      - build-node16-postgres12
                       - build-node14-postgres12
-                      - build-node12-postgres12
-                      - build-node10-postgres12
                   <<: *filter-run-on-master-and-version-tag-only
