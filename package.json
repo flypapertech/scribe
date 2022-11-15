@@ -41,7 +41,7 @@
         "pg-promise": "10.9.2",
         "pgtools": "0.3.2",
         "pluralize": "8.0.0",
-        "redis": "4.2.0",
+        "redis": "4.5.0",
         "sqlstring": "2.3.3",
         "url-join": "5.0.0",
         "yargs": "17.5.1"
