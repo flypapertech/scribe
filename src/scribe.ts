@@ -388,6 +388,7 @@ class DB {
     constructor(db: pgPromise.IDatabase<Record<string, never>>, schemaOverride: any = undefined) {
         this.db = db
         this.defaultSchema = schemaOverride ?? require("./default.table.schema.json")
+        // @ts-ignore this type sucks
         this.schemaCache = createClient({
             url: `redis://${argv.redisHost}:${argv.redisPort}/${argv.redisSchemaDb}`,
             socket: {
@@ -820,11 +821,13 @@ class DB {
             const dmp = new diff_match_patch()
             const oldVersions = []
             oldVersions.push(JSON.parse(currentVersion))
-            // ignore original empty object hence >= 1
-            for (let i = rawHistory.patches.length - 1; i >= 1; i--) {
-                currentVersion = dmp.patch_apply(dmp.patch_fromText(rawHistory.patches[i]), currentVersion)[0]
+            if (rawHistory) {
+                // ignore original empty object hence >= 1
+                for (let i = rawHistory.patches.length - 1; i >= 1; i--) {
+                    currentVersion = dmp.patch_apply(dmp.patch_fromText(rawHistory.patches[i]), currentVersion)[0]
 
-                oldVersions.push(JSON.parse(currentVersion))
+                    oldVersions.push(JSON.parse(currentVersion))
+                }
             }
 
             return oldVersions
