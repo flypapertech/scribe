@@ -824,9 +824,13 @@ class DB {
             if (rawHistory) {
                 // ignore original empty object hence >= 1
                 for (let i = rawHistory.patches.length - 1; i >= 1; i--) {
-                    currentVersion = dmp.patch_apply(dmp.patch_fromText(rawHistory.patches[i]), currentVersion)[0]
-
-                    oldVersions.push(JSON.parse(currentVersion))
+                    try {
+                        currentVersion = dmp.patch_apply(dmp.patch_fromText(rawHistory.patches[i]), currentVersion)[0]
+                        oldVersions.push(JSON.parse(currentVersion))
+                    } catch (err) {
+                        // What do do with this error?
+                        return oldVersions
+                    }
                 }
             }
 
