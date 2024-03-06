@@ -1,6 +1,7 @@
 import { RedisClientType } from "@redis/client"
 import Ajv from "ajv"
 import { diff_match_patch } from "diff-match-patch"
+import dotenv from "dotenv"
 import express from "express"
 import { Server } from "http"
 import { DateTime } from "luxon"
@@ -14,6 +15,8 @@ import { createClient } from "redis"
 import urlJoin from "url-join"
 import yargs from "yargs"
 import { hideBin } from "yargs/helpers"
+
+dotenv.config()
 
 import { getErrorMessage, isPgPromiseError, isPgToolsError } from "./errors.js"
 
