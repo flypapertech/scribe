@@ -9,7 +9,7 @@ import { mkdirp } from "mkdirp"
 import { createRequire } from "module"
 import fetch from "node-fetch"
 import pgPromise from "pg-promise"
-import pgtools from "pgtools"
+import pgtools, { PgtoolsError } from "pgtools"
 import pluralize from "pluralize"
 import { createClient } from "redis"
 import urlJoin from "url-join"
@@ -18,7 +18,7 @@ import { hideBin } from "yargs/helpers"
 
 dotenv.config()
 
-import { getErrorMessage, isPgPromiseError, isPgToolsError } from "./errors.js"
+import { getErrorMessage, isPgPromiseError } from "./errors.js"
 
 const get = (p: string, o: any): any => p.split(".").reduce((xs: any, x: any) => (xs && xs[x] ? xs[x] : null), o)
 const require = createRequire(import.meta.url)
@@ -99,8 +99,8 @@ export async function tryCreateDb(): Promise<void> {
         const res = await pgtools.createdb(dbCreateConfig, argv.dbName)
         console.log(res)
     } catch (err) {
-        if (!isPgToolsError(err)) throw err
-        if (err.pgErr.code !== "42P04") throw err
+        const error = err as PgtoolsError
+        if (error.name !== "duplicate_database") throw err
     }
 }
 

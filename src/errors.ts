@@ -1,22 +1,3 @@
-type pgToolsError = {
-    pgErr: {
-        code: string
-    }
-}
-
-/**
- *
- * @param error
- */
-export function isPgToolsError(error: unknown): error is pgToolsError {
-    return (
-        error !== null &&
-        typeof error === "object" &&
-        typeof (error as pgToolsError).pgErr === "object" &&
-        typeof (error as pgToolsError).pgErr.code === "string"
-    )
-}
-
 type pgPromiseError = {
     code: string
 }
