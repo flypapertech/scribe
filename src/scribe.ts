@@ -702,17 +702,16 @@ class DB {
                         const timestamp = DateTime.fromISO(timeMachine.timestamp)
 
                         filteredResponse = allHistory.map((history) => {
-                            return history.history.reduce((historyAtTime: any, historyEntry: any) => {
-                                const entryDate = get(timeMachine.key, historyEntry)
-                                if (!entryDate) return historyAtTime
+                            history.history.sort((a: any, b: any) => {
+                                const aDate = DateTime.fromISO(get(timeMachine.key, a))
+                                const bDate = DateTime.fromISO(get(timeMachine.key, b))
+                                return aDate >= bDate ? -1 : 1
+                            })
 
-                                const historyDate = DateTime.fromISO(entryDate)
-                                if (historyDate <= timestamp) {
-                                    if (historyAtTime) if (DateTime.fromISO(historyAtTime.date_modified) > historyDate) return historyAtTime
-
-                                    return historyEntry
-                                }
-                            }, undefined as any | undefined)
+                            return history.history.find((x) => {
+                                const xDate = DateTime.fromISO(get(timeMachine.key, x))
+                                return xDate <= timestamp
+                            })
                         })
                     }
                 }
