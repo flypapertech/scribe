@@ -708,7 +708,7 @@ class DB {
                                 return aDate >= bDate ? -1 : 1
                             })
 
-                            return history.history.find((x) => {
+                            return history.history.find((x: any) => {
                                 const xDate = DateTime.fromISO(get(timeMachine.key, x))
                                 return xDate <= timestamp
                             })
