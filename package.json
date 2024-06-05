@@ -39,7 +39,7 @@
         "luxon": "3.4.4",
         "mkdirp": "3.0.1",
         "node-fetch": "3.2.10",
-        "pg-promise": "10.9.2",
+        "pg-promise": "10.15.4",
         "pgtools": "1.0.1",
         "pluralize": "8.0.0",
         "redis": "4.2.0",
