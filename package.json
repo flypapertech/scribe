@@ -38,7 +38,7 @@
         "express-bunyan-logger": "1.2.0",
         "luxon": "3.4.4",
         "mkdirp": "3.0.1",
-        "node-fetch": "3.2.10",
+        "node-fetch": "3.3.2",
         "pg-promise": "10.9.2",
         "pgtools": "1.0.1",
         "pluralize": "8.0.0",
