@@ -1,3 +1,4 @@
+import { Signer } from "@aws-sdk/rds-signer"
 import { RedisClientType } from "@redis/client"
 import Ajv from "ajv"
 import { diff_match_patch } from "diff-match-patch"
@@ -40,6 +41,9 @@ const argv = yargs(hideBin(process.argv))
     .option("p", {
         alias: "port",
         default: 1337
+    })
+    .option("useIAMConnection", {
+        default: false
     })
     .option("dbHost", {
         default: "localhost"
@@ -84,11 +88,29 @@ interface ComponentSchema {
     validator: Ajv.ValidateFunction
 }
 
-const dbCreateConfig = {
-    user: argv.dbUser,
-    password: argv.dbPass,
-    port: argv.dbPort,
-    host: argv.dbHost
+const getDbPass = async () => {
+    if (!argv.useIAMConnection) return argv.dbPass
+    try {
+        const signer = new Signer({
+            hostname: argv.dbHost,
+            port: argv.dbPort,
+            username: argv.dbUser
+        })
+
+        return await signer.getAuthToken()
+    } catch (e) {
+        console.log(e)
+        return argv.dbPass
+    }
+}
+
+const dbConnectionConfig = async () => {
+    return {
+        user: argv.dbUser,
+        password: await getDbPass(),
+        port: argv.dbPort,
+        host: argv.dbHost
+    }
 }
 
 /**
@@ -96,7 +118,7 @@ const dbCreateConfig = {
  */
 export async function tryCreateDb(): Promise<void> {
     try {
-        const res = await pgtools.createdb(dbCreateConfig, argv.dbName)
+        const res = await pgtools.createdb(await dbConnectionConfig(), argv.dbName)
         console.log(res)
     } catch (err) {
         const error = err as PgtoolsError
@@ -108,7 +130,7 @@ export async function tryCreateDb(): Promise<void> {
  * @param schemaOverride
  */
 export async function createServer(schemaOverride: any = undefined): Promise<Server> {
-    const dbConnectConfig = Object.assign({}, dbCreateConfig, {
+    const dbConnectConfig = Object.assign({}, await dbConnectionConfig(), {
         database: argv.dbName
     })
 
