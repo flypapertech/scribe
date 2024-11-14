@@ -60,6 +60,9 @@ const argv = yargs(hideBin(process.argv))
     .option("dbName", {
         default: "scribe"
     })
+    .option("useSSL", {
+        default: false
+    })
     .option("requireSchema", {
         default: false
     })
@@ -88,28 +91,30 @@ interface ComponentSchema {
     validator: Ajv.ValidateFunction
 }
 
-const getDbPass = async () => {
-    if (!argv.useIamConnection) return argv.dbPass
-    try {
-        const signer = new Signer({
-            hostname: argv.dbHost,
-            port: argv.dbPort,
-            username: argv.dbUser
-        })
-
-        return await signer.getAuthToken()
-    } catch (e) {
-        console.log(e)
-        return argv.dbPass
-    }
-}
-
 const dbConnectionConfig = async () => {
+    let pass = argv.dbPass
+    let ssl = argv.useSSL
+    if (argv.useIamConnection) {
+        try {
+            const signer = new Signer({
+                hostname: argv.dbHost,
+                port: argv.dbPort,
+                username: argv.dbUser
+            })
+
+            pass = await signer.getAuthToken()
+            ssl = true
+        } catch (e) {
+            console.log(e)
+        }
+    }
+
     return {
         user: argv.dbUser,
-        password: await getDbPass(),
+        password: pass,
         port: argv.dbPort,
-        host: argv.dbHost
+        host: argv.dbHost,
+        ssl
     }
 }
 
