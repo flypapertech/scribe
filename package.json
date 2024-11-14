@@ -1,6 +1,6 @@
 {
     "name": "@flypapertech/scribe",
-    "version": "0.11.4",
+    "version": "0.11.5",
     "description": "Database modeling services.",
     "exports": "./dist/scribe.cli.js",
     "type": "module",
