@@ -42,7 +42,7 @@ const argv = yargs(hideBin(process.argv))
         alias: "port",
         default: 1337
     })
-    .option("useIAMConnection", {
+    .option("useIamConnection", {
         default: false
     })
     .option("dbHost", {
@@ -89,7 +89,7 @@ interface ComponentSchema {
 }
 
 const getDbPass = async () => {
-    if (!argv.useIAMConnection) return argv.dbPass
+    if (!argv.useIamConnection) return argv.dbPass
     try {
         const signer = new Signer({
             hostname: argv.dbHost,
