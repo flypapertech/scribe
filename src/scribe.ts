@@ -93,7 +93,7 @@ interface ComponentSchema {
 
 const dbConnectionConfig = async () => {
     let pass = argv.dbPass
-    let ssl = argv.useSSL
+    let ssl: any = argv.useSSL
     if (argv.useIamConnection) {
         try {
             const signer = new Signer({
@@ -103,7 +103,11 @@ const dbConnectionConfig = async () => {
             })
 
             pass = await signer.getAuthToken()
-            ssl = true
+            // NOTE: https://github.com/brianc/node-postgres/issues/1843
+            // NOTE: https://github.com/brianc/node-postgres/issues/2009
+            ssl = {
+                rejectUnauthorized: false
+            }
         } catch (e) {
             console.log(e)
         }
