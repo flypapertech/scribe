@@ -92,7 +92,7 @@ interface ComponentSchema {
 }
 
 const dbConnectionConfig = async () => {
-    let pass = argv.dbPass
+    let pass: string | (() => Promise<string>) = argv.dbPass
     let ssl: any = argv.useSSL
     if (argv.useIamConnection) {
         try {
@@ -102,7 +102,7 @@ const dbConnectionConfig = async () => {
                 username: argv.dbUser
             })
 
-            pass = await signer.getAuthToken()
+            pass = () => signer.getAuthToken()
             // NOTE: https://github.com/brianc/node-postgres/issues/1843
             // NOTE: https://github.com/brianc/node-postgres/issues/2009
             ssl = {
